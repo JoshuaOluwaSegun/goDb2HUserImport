@@ -1,24 +1,21 @@
-### LDAP Import Go - [GO](https://golang.org/) Import Script to Hornbill
+### DB Import Go - [GO](https://golang.org/) Import Script to Hornbill
 
 ### Quick links
 - [Installation](#installation)
 - [Config](#config)
     - [Instance Config](#InstanceConfig)
-    - [LDAP Config](#LDAPConfig)
-    - [LDAP Mapping](#LDAPMapping)
+    - [SQL Config](#SQLConfig)
+    - [SQL Mapping](#UserMapping)
 - [Execute](#execute)
+- proxy (#proxy)
 - [Testing](testing)
 - [Scheduling](#scheduling)
 - [Logging](#logging)
-- [Error Codes](#error codes)
-- [Change Log](#change log)
+- [Error Codes](#Error Codes)
 
 # Installation
 
 #### Windows
-
-[//]: # * Download the [x64 Binary](https://github.com/hornbill/goDb2HUserImport/releases/download/v2.0.5/ldap_user_import_win_x64_v2_0_5.zip) or [x86 Binary](https://github.com/hornbill/goLDAPUserImport/releases/download/v2.0.5/ldap_user_import_win_x86_v2_0_5.zip)
-
 * compile into a folder you would like the application to run from e.g. `C:\goDb2HUserImport\`
 * Open '''conf.json''' and add in the necessary configration
 * Open Command Line Prompt as Administrator
