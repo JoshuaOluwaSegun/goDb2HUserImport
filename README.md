@@ -7,11 +7,11 @@
     - [SQL Config](#SQLConfig)
     - [SQL Mapping](#UserMapping)
 - [Execute](#execute)
-- proxy (#proxy)
+- [proxy](#proxy)
 - [Testing](testing)
 - [Scheduling](#scheduling)
 - [Logging](#logging)
-- [Error Codes](#Error Codes)
+- [Error Codes](#Error_Codes)
 
 # Installation
 
