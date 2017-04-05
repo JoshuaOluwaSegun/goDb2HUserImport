@@ -2,212 +2,209 @@ package main
 
 //----- Packages -----
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
-    "encoding/xml"
-    "encoding/base64"
-    "text/template"
-    "bytes"
+	"encoding/xml"
 	"errors"
 	"flag"
 	"fmt"
-	"os"
-	"log"
 	"html"
-    /* DAV inclusion */
-    "io"
-    "io/ioutil"
-    "net/http"
-    "encoding/hex"
-    
+	"log"
+	"os"
+	"text/template"
+	/* DAV inclusion */
+	"encoding/hex"
+	"io"
+	"io/ioutil"
+	"net/http"
+
+	"crypto/rand"
+	"github.com/hornbill/color" //-- CLI Colour
+	"github.com/hornbill/goApiLib"
+	"github.com/hornbill/pb" //--Hornbil Clone of "github.com/cheggaaa/pb"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"crypto/rand"
-    "github.com/hornbill/color" //-- CLI Colour
-	"github.com/hornbill/goApiLib"
-    "github.com/hornbill/pb"      //--Hornbil Clone of "github.com/cheggaaa/pb"
 	//SQL Package
 	"github.com/hornbill/sqlx"
 	//SQL Drivers
 	"github.com/hornbill/go-mssqldb"
 	"github.com/hornbill/mysql"
 	"github.com/jnewmano/mysql320" //MySQL v3.2.0 to v5 driver - Provides SWSQL (MySQL 4.0.16) support
-
 )
 
 //----- Constants -----
 const (
-    letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    version = "1.0.0"
-    constOK = "ok"
-    updateString = "Update"
-    createString = "Create"
+	letterBytes  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	version      = "1.2.0"
+	constOK      = "ok"
+	updateString = "Update"
+	createString = "Create"
 )
 
 var (
+	SQLImportConf       SQLImportConfStruct
+	xmlmcInstanceConfig xmlmcConfig
+	xmlmcUsers          []userListItemStruct
+	sites               []siteListStruct
+	managers            []managerListStruct
+	groups              []groupListStruct
+	counters            counterTypeStruct
+	configFileName      string
+	configZone          string
+	configLogPrefix     string
+	configDryRun        bool
+	configVersion       bool
+	configWorkers       int
+	configMaxRoutines   string
+	BaseSQLQuery        string
+	timeNow             string
+	startTime           time.Time
+	endTime             time.Duration
+	errorCount          uint64
+	noValuesToUpdate    = "There are no values to update"
+	mutex               = &sync.Mutex{}
+	mutexBar            = &sync.Mutex{}
+	mutexCounters       = &sync.Mutex{}
+	mutexCustomers      = &sync.Mutex{}
+	mutexSite           = &sync.Mutex{}
+	mutexSites          = &sync.Mutex{}
+	mutexGroups         = &sync.Mutex{}
+	mutexManagers       = &sync.Mutex{}
+	logFileMutex        = &sync.Mutex{}
+	bufferMutex         = &sync.Mutex{}
+	worker              sync.WaitGroup
+	maxGoroutines       = 6
 
-SQLImportConf       SQLImportConfStruct
-xmlmcInstanceConfig xmlmcConfig
-xmlmcUsers          []userListItemStruct
-sites               []siteListStruct
-managers            []managerListStruct
-groups              []groupListStruct
-counters            counterTypeStruct
-configFileName      string
-configZone          string
-configLogPrefix     string
-configDryRun        bool
-configVersion       bool
-configWorkers       int
-configMaxRoutines   string
-BaseSQLQuery        string
-timeNow             string
-startTime           time.Time
-endTime             time.Duration
-errorCount          uint64
-noValuesToUpdate    = "There are no values to update"
-mutex               = &sync.Mutex{}
-mutexBar            = &sync.Mutex{}
-mutexCounters       = &sync.Mutex{}
-mutexCustomers      = &sync.Mutex{}
-mutexSite           = &sync.Mutex{}
-mutexSites          = &sync.Mutex{}
-mutexGroups         = &sync.Mutex{}
-mutexManagers       = &sync.Mutex{}
-logFileMutex        = &sync.Mutex{}
-bufferMutex         = &sync.Mutex{}
-worker              sync.WaitGroup
-maxGoroutines       = 6
-    
-userProfileMappingMap = map[string]string{
-	"MiddleName":        "middleName",
-	"JobDescription":    "jobDescription",
-	"Manager":           "manager",
-	"WorkPhone":         "workPhone",
-	"Qualifications":    "qualifications",
-	"Interests":         "interests",
-	"Expertise":         "expertise",
-	"Gender":            "gender",
-	"Dob":               "dob",
-	"Nationality":       "nationality",
-	"Religion":          "religion",
-	"HomeTelephone":     "homeTelephone",
-	"SocialNetworkA":    "socialNetworkA",
-	"SocialNetworkB":    "socialNetworkB",
-	"SocialNetworkC":    "socialNetworkC",
-	"SocialNetworkD":    "socialNetworkD",
-	"SocialNetworkE":    "socialNetworkE",
-	"SocialNetworkF":    "socialNetworkF",
-	"SocialNetworkG":    "socialNetworkG",
-	"SocialNetworkH":    "socialNetworkH",
-	"PersonalInterests": "personalInterests",
-	"HomeAddress":       "homeAddress",
-	"PersonalBlog":      "personalBlog",
-	"Attrib1":           "attrib1",
-	"Attrib2":           "attrib2",
-	"Attrib3":           "attrib3",
-	"Attrib4":           "attrib4",
-	"Attrib5":           "attrib5",
-	"Attrib6":           "attrib6",
-	"Attrib7":           "attrib7",
-	"Attrib8":           "attrib8"}
-    
-userProfileArray = []string{
-	"MiddleName",
-	"JobDescription",
-	"Manager",
-	"WorkPhone",
-	"Qualifications",
-	"Interests",
-	"Expertise",
-	"Gender",
-	"Dob",
-	"Nationality",
-	"Religion",
-	"HomeTelephone",
-	"SocialNetworkA",
-	"SocialNetworkB",
-	"SocialNetworkC",
-	"SocialNetworkD",
-	"SocialNetworkE",
-	"SocialNetworkF",
-	"SocialNetworkG",
-	"SocialNetworkH",
-	"PersonalInterests",
-	"HomeAddress",
-	"PersonalBlog",
-	"Attrib1",
-	"Attrib2",
-	"Attrib3",
-	"Attrib4",
-	"Attrib5",
-	"Attrib6",
-	"Attrib7",
-	"Attrib8"}
+	userProfileMappingMap = map[string]string{
+		"MiddleName":        "middleName",
+		"JobDescription":    "jobDescription",
+		"Manager":           "manager",
+		"WorkPhone":         "workPhone",
+		"Qualifications":    "qualifications",
+		"Interests":         "interests",
+		"Expertise":         "expertise",
+		"Gender":            "gender",
+		"Dob":               "dob",
+		"Nationality":       "nationality",
+		"Religion":          "religion",
+		"HomeTelephone":     "homeTelephone",
+		"SocialNetworkA":    "socialNetworkA",
+		"SocialNetworkB":    "socialNetworkB",
+		"SocialNetworkC":    "socialNetworkC",
+		"SocialNetworkD":    "socialNetworkD",
+		"SocialNetworkE":    "socialNetworkE",
+		"SocialNetworkF":    "socialNetworkF",
+		"SocialNetworkG":    "socialNetworkG",
+		"SocialNetworkH":    "socialNetworkH",
+		"PersonalInterests": "personalInterests",
+		"HomeAddress":       "homeAddress",
+		"PersonalBlog":      "personalBlog",
+		"Attrib1":           "attrib1",
+		"Attrib2":           "attrib2",
+		"Attrib3":           "attrib3",
+		"Attrib4":           "attrib4",
+		"Attrib5":           "attrib5",
+		"Attrib6":           "attrib6",
+		"Attrib7":           "attrib7",
+		"Attrib8":           "attrib8"}
 
-userMappingMap = map[string]string{
-	"Name":           "name",
-	"Password":       "password",
-	"UserType":       "userType",
-	"FirstName":      "firstName",
-	"LastName":       "lastName",
-	"JobTitle":       "jobTitle",
-	"Site":           "site",
-	"Phone":          "phone",
-	"Email":          "email",
-	"Mobile":         "mobile",
-	"AbsenceMessage": "absenceMessage",
-	"TimeZone":       "timeZone",
-	"Language":       "language",
-	"DateTimeFormat": "dateTimeFormat",
-	"DateFormat":     "dateFormat",
-	"TimeFormat":     "timeFormat",
-	"CurrencySymbol": "currencySymbol",
-	"CountryCode":    "countryCode"}
-    
-userUpdateArray = []string{
-    "userId",
-	"UserType",
-	"Name",
-	"Password",
-	"FirstName",
-	"LastName",
-	"JobTitle",
-	"Site",
-	"Phone",
-	"Email",
-	"Mobile",
-	"AbsenceMessage",
-	"TimeZone",
-	"Language",
-	"DateTimeFormat",
-	"DateFormat",
-	"TimeFormat",
-	"CurrencySymbol",
-	"CountryCode"}
-    
-userCreateArray = []string{
-	"userId",
-	"Name",
-	"Password",
-	"UserType",
-	"FirstName",
-	"LastName",
-	"JobTitle",
-	"Site",
-	"Phone",
-	"Email",
-	"Mobile",
-	"AbsenceMessage",
-	"TimeZone",
-	"Language",
-	"DateTimeFormat",
-	"DateFormat",
-	"TimeFormat",
-	"CurrencySymbol",
-	"CountryCode"}
+	userProfileArray = []string{
+		"MiddleName",
+		"JobDescription",
+		"Manager",
+		"WorkPhone",
+		"Qualifications",
+		"Interests",
+		"Expertise",
+		"Gender",
+		"Dob",
+		"Nationality",
+		"Religion",
+		"HomeTelephone",
+		"SocialNetworkA",
+		"SocialNetworkB",
+		"SocialNetworkC",
+		"SocialNetworkD",
+		"SocialNetworkE",
+		"SocialNetworkF",
+		"SocialNetworkG",
+		"SocialNetworkH",
+		"PersonalInterests",
+		"HomeAddress",
+		"PersonalBlog",
+		"Attrib1",
+		"Attrib2",
+		"Attrib3",
+		"Attrib4",
+		"Attrib5",
+		"Attrib6",
+		"Attrib7",
+		"Attrib8"}
 
+	userMappingMap = map[string]string{
+		"Name":           "name",
+		"Password":       "password",
+		"UserType":       "userType",
+		"FirstName":      "firstName",
+		"LastName":       "lastName",
+		"JobTitle":       "jobTitle",
+		"Site":           "site",
+		"Phone":          "phone",
+		"Email":          "email",
+		"Mobile":         "mobile",
+		"AbsenceMessage": "absenceMessage",
+		"TimeZone":       "timeZone",
+		"Language":       "language",
+		"DateTimeFormat": "dateTimeFormat",
+		"DateFormat":     "dateFormat",
+		"TimeFormat":     "timeFormat",
+		"CurrencySymbol": "currencySymbol",
+		"CountryCode":    "countryCode"}
+
+	userUpdateArray = []string{
+		"userId",
+		"UserType",
+		"Name",
+		"Password",
+		"FirstName",
+		"LastName",
+		"JobTitle",
+		"Site",
+		"Phone",
+		"Email",
+		"Mobile",
+		"AbsenceMessage",
+		"TimeZone",
+		"Language",
+		"DateTimeFormat",
+		"DateFormat",
+		"TimeFormat",
+		"CurrencySymbol",
+		"CountryCode"}
+
+	userCreateArray = []string{
+		"userId",
+		"Name",
+		"Password",
+		"UserType",
+		"FirstName",
+		"LastName",
+		"JobTitle",
+		"Site",
+		"Phone",
+		"Email",
+		"Mobile",
+		"AbsenceMessage",
+		"TimeZone",
+		"Language",
+		"DateTimeFormat",
+		"DateFormat",
+		"TimeFormat",
+		"CurrencySymbol",
+		"CountryCode"}
 )
 
 type siteListStruct struct {
@@ -314,8 +311,8 @@ type userProfileMappingStruct struct {
 	Attrib8           string
 }
 type userManagerStruct struct {
-	Action        string
-	Enabled       bool
+	Action  string
+	Enabled bool
 }
 
 type siteLookupStruct struct {
@@ -324,11 +321,11 @@ type siteLookupStruct struct {
 	Attribute string
 }
 type imageLinkStruct struct {
-	Action      string
-	Enabled     bool
-	UploadType  string
-	ImageType   string
-	URI         string
+	Action     string
+	Enabled    bool
+	UploadType string
+	ImageType  string
+	URI        string
 }
 type orgLookupStructOLD struct {
 	Action      string
@@ -340,35 +337,35 @@ type orgLookupStructOLD struct {
 	TasksAction bool
 }
 type orgLookupStruct struct {
-	Action      string
-	Enabled     bool
-	OrgUnits    []OrgUnitStruct
+	Action   string
+	Enabled  bool
+	OrgUnits []OrgUnitStruct
 }
 type OrgUnitStruct struct {
-    Attribute   string
+	Attribute   string
 	Type        int
 	Membership  string
 	TasksView   bool
 	TasksAction bool
 }
 type SQLImportConfStruct struct {
-	APIKey              string
-	InstanceID          string
-	URL                 string
-	DAVURL              string
-    UpdateUserType      bool
-	UserRoleAction      string
-	UserIdentifier      string
-	SQLConf             sqlConfStruct
-	UserMapping         map[string]string //userMappingStruct
-	UserAccountStatus   userAccountStatusStruct
-	UserProfileMapping  map[string]string //userProfileMappingStruct
-	UserManagerMapping  userManagerStruct
-	SQLAttributes       []string
-	Roles               []string
-	SiteLookup          siteLookupStruct
-	ImageLink           imageLinkStruct
-	OrgLookup           orgLookupStruct
+	APIKey             string
+	InstanceID         string
+	URL                string
+	DAVURL             string
+	UpdateUserType     bool
+	UserRoleAction     string
+	UserIdentifier     string
+	SQLConf            sqlConfStruct
+	UserMapping        map[string]string //userMappingStruct
+	UserAccountStatus  userAccountStatusStruct
+	UserProfileMapping map[string]string //userProfileMappingStruct
+	UserManagerMapping userManagerStruct
+	SQLAttributes      []string
+	Roles              []string
+	SiteLookup         siteLookupStruct
+	ImageLink          imageLinkStruct
+	OrgLookup          orgLookupStruct
 }
 type xmlmcResponse struct {
 	MethodResult string       `xml:"status,attr"`
@@ -413,6 +410,7 @@ type userListItemStruct struct {
 	UserID string `xml:"userId"`
 	Name   string `xml:"name"`
 }
+
 //###
 type sqlConfStruct struct {
 	Driver   string
@@ -423,10 +421,8 @@ type sqlConfStruct struct {
 	Query    string
 	Database string
 	Encrypt  bool
-	UserID  string
+	UserID   string
 }
-
-
 
 //### organisation units structures
 type xmlmcuserSetGroupOptionsResponse struct {
@@ -434,9 +430,9 @@ type xmlmcuserSetGroupOptionsResponse struct {
 	State        stateStruct `xml:"state"`
 }
 type xmlmcprofileSetImageResponse struct {
-	MethodResult string      `xml:"status,attr"`
+	MethodResult string                `xml:"status,attr"`
 	Params       paramsGroupListStruct `xml:"params"`
-	State        stateStruct `xml:"state"`
+	State        stateStruct           `xml:"state"`
 }
 type xmlmcGroupListResponse struct {
 	MethodResult string                `xml:"status,attr"`
@@ -456,8 +452,6 @@ type groupObjectStruct struct {
 	GroupID   string `xml:"h_id"`
 	GroupName string `xml:"h_name"`
 }
-
-
 
 func initVars() {
 	//-- Start Time for Durration
@@ -513,21 +507,21 @@ func main() {
 		logger(4, "Unable to Connect to Instance", true)
 		return
 	}
-    
+
 	//Set SWSQLDriver to mysql320
 	if SQLImportConf.SQLConf.Driver == "swsql" {
 		SQLImportConf.SQLConf.Driver = "mysql320"
 	}
 
 	//Get asset types, process accordingly
-    var boolSQLUsers, arrUsers = queryDatabase()
-    if boolSQLUsers {
-        processUsers(arrUsers)
-    } else {
+	var boolSQLUsers, arrUsers = queryDatabase()
+	if boolSQLUsers {
+		processUsers(arrUsers)
+	} else {
 		logger(4, "No Results found", true)
 		return
-    }
-    
+	}
+
 	outputEnd()
 }
 
@@ -571,8 +565,8 @@ func procFlags() {
 	if !configVersion {
 		outputFlags()
 	}
-    
-    //Check maxGoroutines for valid value
+
+	//Check maxGoroutines for valid value
 	maxRoutines, err := strconv.Atoi(configMaxRoutines)
 	if err != nil {
 		color.Red("Unable to convert maximum concurrency of [" + configMaxRoutines + "] to type INT for processing")
@@ -597,7 +591,6 @@ func outputFlags() {
 	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
 	logger(1, "Flag - Workers "+fmt.Sprintf("%v", configWorkers), false)
 }
-
 
 //-- Check Latest
 //-- Function to Load Configruation File
@@ -817,11 +810,10 @@ func getInstanceDAVURL() string {
 	return xmlmcInstanceConfig.url
 }
 
-
 //buildConnectionString -- Build the connection string for the SQL driver
 func buildConnectionString() string {
-//	if SQLImportConf.SQLConf.Server == "" || SQLImportConf.SQLConf.Database == "" || SQLImportConf.SQLConf.UserName == "" || SQLImportConf.SQLConf.Password == "" {
-	if SQLImportConf.SQLConf.Server == "" || SQLImportConf.SQLConf.Database == "" || SQLImportConf.SQLConf.UserName == ""  {
+	//	if SQLImportConf.SQLConf.Server == "" || SQLImportConf.SQLConf.Database == "" || SQLImportConf.SQLConf.UserName == "" || SQLImportConf.SQLConf.Password == "" {
+	if SQLImportConf.SQLConf.Server == "" || SQLImportConf.SQLConf.Database == "" || SQLImportConf.SQLConf.UserName == "" {
 		//Conf not set - log error and return empty string
 		logger(4, "Database configuration not set.", true)
 		return ""
@@ -829,7 +821,7 @@ func buildConnectionString() string {
 	logger(1, "Connecting to Database Server: "+SQLImportConf.SQLConf.Server, true)
 	connectString := ""
 	switch SQLImportConf.SQLConf.Driver {
-    
+
 	case "mssql":
 		connectString = "server=" + SQLImportConf.SQLConf.Server
 		connectString = connectString + ";database=" + SQLImportConf.SQLConf.Database
@@ -843,7 +835,7 @@ func buildConnectionString() string {
 			dbPortSetting = strconv.Itoa(SQLImportConf.SQLConf.Port)
 			connectString = connectString + ";port=" + dbPortSetting
 		}
-        
+
 	case "mysql":
 		connectString = SQLImportConf.SQLConf.UserName + ":" + SQLImportConf.SQLConf.Password
 		connectString = connectString + "@tcp(" + SQLImportConf.SQLConf.Server + ":"
@@ -855,7 +847,7 @@ func buildConnectionString() string {
 			connectString = connectString + "3306"
 		}
 		connectString = connectString + ")/" + SQLImportConf.SQLConf.Database
-        
+
 	case "mysql320":
 		var dbPortSetting string
 		if SQLImportConf.SQLConf.Port != 0 {
@@ -865,12 +857,17 @@ func buildConnectionString() string {
 		}
 		connectString = "tcp:" + SQLImportConf.SQLConf.Server + ":" + dbPortSetting
 		connectString = connectString + "*" + SQLImportConf.SQLConf.Database + "/" + SQLImportConf.SQLConf.UserName + "/" + SQLImportConf.SQLConf.Password
-        
+	case "csv":
+		connectString = "DSN=" + SQLImportConf.SQLConf.Database + ";Extended Properties='text;HDR=Yes;FMT=Delimited'"
+		SQLImportConf.SQLConf.Driver = "odbc"
+	case "excel":
+		connectString = "DSN=" + SQLImportConf.SQLConf.Database + ";"
+		SQLImportConf.SQLConf.Driver = "odbc"
+
 	}
-    
+
 	return connectString
 }
-
 
 //queryDatabase -- Query Asset Database for assets of current type
 //-- Builds map of assets, returns true if successful
@@ -916,10 +913,9 @@ func queryDatabase() (bool, []map[string]interface{}) {
 		ArrUserMaps = append(ArrUserMaps, results)
 	}
 	defer rows.Close()
-	logger(3, fmt.Sprintf("[DATABASE] Found %d results",intUserCount), false)
+	logger(3, fmt.Sprintf("[DATABASE] Found %d results", intUserCount), false)
 	return true, ArrUserMaps
 }
-
 
 //processAssets -- Processes Assets from Asset Map
 //--If asset already exists on the instance, update
@@ -940,81 +936,83 @@ func processUsers(arrUsers []map[string]interface{}) {
 		//Get the asset ID for the current record
 		userID := fmt.Sprintf("%s", userMap[userIDField])
 		logger(1, "User ID: "+userID, false)
-        if userID != "" {
-            //logger(1, "User ID: "+fmt.Sprintf("%s", userID), false)
-            espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-            espXmlmc.SetAPIKey(SQLImportConf.APIKey)
-            go func() {
-                defer worker.Done()
-                time.Sleep(1 * time.Millisecond)
-                mutexBar.Lock()
-                bar.Increment()
-                mutexBar.Unlock()
+		if userID != "" {
+			//logger(1, "User ID: "+fmt.Sprintf("%s", userID), false)
+			espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
+			espXmlmc.SetAPIKey(SQLImportConf.APIKey)
+			go func() {
+				defer worker.Done()
+				time.Sleep(1 * time.Millisecond)
+				mutexBar.Lock()
+				bar.Increment()
+				mutexBar.Unlock()
 
-                var boolUpdate = false
-                var isErr = false
-                boolUpdate, err := checkUserOnInstance(userID, espXmlmc)
-                if err != nil {
-                    logger(4, "Unable to Search For User: "+fmt.Sprintf("%v", err), true)
-                    isErr = true
-                }
-                //-- Update or Create Asset
-                if !isErr {
-                    if boolUpdate {
-                        logger(1, "Update Customer: "+userID, false)
-                        _, errUpdate := updateUser(userMap, espXmlmc)
-                        if errUpdate != nil {
-                            logger(4, "Unable to Update User: "+fmt.Sprintf("%v", errUpdate), false)
-                        }
-                    } else {
-                        logger(1, "Create Customer: "+userID, false)
-                        _, errorCreate := createUser(userMap, espXmlmc)
-                        if errorCreate != nil {
-                            logger(4, "Unable to Create User: "+fmt.Sprintf("%v", errorCreate), false)
-                        }
-                    }
-                }
-                <-maxGoroutinesGuard
-            }()
-        }
+				var boolUpdate = false
+				var isErr = false
+				boolUpdate, err := checkUserOnInstance(userID, espXmlmc)
+				if err != nil {
+					logger(4, "Unable to Search For User: "+fmt.Sprintf("%v", err), true)
+					isErr = true
+				}
+				//-- Update or Create Asset
+				if !isErr {
+					if boolUpdate {
+						logger(1, "Update Customer: "+userID, false)
+						_, errUpdate := updateUser(userMap, espXmlmc)
+						if errUpdate != nil {
+							logger(4, "Unable to Update User: "+fmt.Sprintf("%v", errUpdate), false)
+						}
+					} else {
+						logger(1, "Create Customer: "+userID, false)
+						_, errorCreate := createUser(userMap, espXmlmc)
+						if errorCreate != nil {
+							logger(4, "Unable to Create User: "+fmt.Sprintf("%v", errorCreate), false)
+						}
+					}
+				}
+				<-maxGoroutinesGuard
+			}()
+		}
 	}
 	worker.Wait()
 	bar.FinishPrint("Processing Complete!")
 }
 
-
-func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {    buf2 := bytes.NewBufferString("");
+func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
+	buf2 := bytes.NewBufferString("")
 	//-- Do we Lookup Site
-    var p map[string]string
-    p = make(map[string]string)
-    for key, value := range u {
-        p[key] = fmt.Sprintf("%s", value)
-    }
-    userID := p[SQLImportConf.SQLConf.UserID]
+	var p map[string]string
+	p = make(map[string]string)
+	for key, value := range u {
+		p[key] = fmt.Sprintf("%s", value)
+	}
+	userID := p[SQLImportConf.SQLConf.UserID]
 	for key := range userUpdateArray {
 		field := userUpdateArray[key]
 		value := SQLImportConf.UserMapping[field] //userMappingMap[name]
 
-        t := template.New(field)
-        t, _ = t.Parse(value)
-        buf := bytes.NewBufferString("");
-        t.Execute(buf, p)
+		t := template.New(field)
+		t, _ = t.Parse(value)
+		buf := bytes.NewBufferString("")
+		t.Execute(buf, p)
 		value = buf.String()
-        if (value == "%!s(<nil>)") { value = "" }
+		if value == "%!s(<nil>)" {
+			value = ""
+		}
 
 		//-- Process Site
 		if field == "Site" {
-            //-- Only use Site lookup if enabled and not set to Update only
-            if SQLImportConf.SiteLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString {
-                value = getSiteFromLookup(value, buf2)
-            }
+			//-- Only use Site lookup if enabled and not set to Update only
+			if SQLImportConf.SiteLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString {
+				value = getSiteFromLookup(value, buf2)
+			}
 		}
-        
-        //-- Skip UserType Field
-        if field == "UserType" && !SQLImportConf.UpdateUserType {
-            value = ""
-        }
-        
+
+		//-- Skip UserType Field
+		if field == "UserType" && !SQLImportConf.UpdateUserType {
+			value = ""
+		}
+
 		//-- Skip Password Field
 		if field == "Password" {
 			value = ""
@@ -1056,7 +1054,7 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		if SQLImportConf.UserRoleAction != createString && len(SQLImportConf.Roles) > 0 {
 			userAddRoles(userID, buf2, espXmlmc)
 		}
-        
+
 		//-- Add Image
 		if SQLImportConf.ImageLink.Enabled && SQLImportConf.ImageLink.Action != createString && SQLImportConf.ImageLink.URI != "" {
 			userAddImage(p, buf2)
@@ -1075,7 +1073,7 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		} else {
 			updateSkippedCountInc()
 		}
-        logger(1, buf2.String() , false)
+		logger(1, buf2.String(), false)
 		return true, nil
 	}
 	//-- Inc Counter
@@ -1089,106 +1087,109 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 }
 
 func userAddGroups(p map[string]string, buffer *bytes.Buffer) bool {
-    for _, orgUnit := range SQLImportConf.OrgLookup.OrgUnits {
+	for _, orgUnit := range SQLImportConf.OrgLookup.OrgUnits {
 		userAddGroup(p, buffer, orgUnit)
 	}
-    return true
+	return true
 }
 func userAddImage(p map[string]string, buffer *bytes.Buffer) {
 	UserID := p[SQLImportConf.SQLConf.UserID]
 
-    t := template.New("i" + UserID)
-    t, _ = t.Parse(SQLImportConf.ImageLink.URI)
-    buf := bytes.NewBufferString("");
-    t.Execute(buf, p)
-    value := buf.String()
-    if (value == "%!s(<nil>)") { value = "" }
-    buffer.WriteString(loggerGen(2, "Image for user: "+value))
-    if value == "" { return }
+	t := template.New("i" + UserID)
+	t, _ = t.Parse(SQLImportConf.ImageLink.URI)
+	buf := bytes.NewBufferString("")
+	t.Execute(buf, p)
+	value := buf.String()
+	if value == "%!s(<nil>)" {
+		value = ""
+	}
+	buffer.WriteString(loggerGen(2, "Image for user: "+value))
+	if value == "" {
+		return
+	}
 
+	if strings.ToUpper(SQLImportConf.ImageLink.UploadType) != "URI" {
+		// get binary to upload via WEBDAV and then set value to relative "session" URI
+		client := http.Client{
+			Timeout: time.Duration(10 * time.Second),
+		}
 
-    if strings.ToUpper(SQLImportConf.ImageLink.UploadType) != "URI" {
-        // get binary to upload via WEBDAV and then set value to relative "session" URI
-        client := http.Client{
-            Timeout: time.Duration(10 * time.Second),
-        }
+		rel_link := "session/" + UserID
+		url := SQLImportConf.DAVURL + rel_link
 
-        rel_link := "session/" + UserID
-        url := SQLImportConf.DAVURL + rel_link
+		var imageB []byte
+		var Berr error
+		switch strings.ToUpper(SQLImportConf.ImageLink.UploadType) {
+		case "URL":
+			resp, err := http.Get(value)
+			if err != nil {
+				buffer.WriteString(loggerGen(4, "Unable to find "+value+" ["+fmt.Sprintf("%v", http.StatusInternalServerError)+"]"))
+				return
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode == 201 || resp.StatusCode == 200 {
+				imageB, _ = ioutil.ReadAll(resp.Body)
 
-        var imageB []byte
-        var Berr error
-        switch strings.ToUpper(SQLImportConf.ImageLink.UploadType) {
-            case "URL":
-                resp, err := http.Get(value)
-                if err != nil {
-                    buffer.WriteString(loggerGen(4, "Unable to find " + value + " [" + fmt.Sprintf("%v", http.StatusInternalServerError) + "]" ))  
-                    return                
-                }
-                defer resp.Body.Close()
-                if resp.StatusCode == 201 || resp.StatusCode == 200 {
-                    imageB, _ = ioutil.ReadAll(resp.Body)
-                    
-                } else {
-                    buffer.WriteString(loggerGen(4, "Unsuccesful download: " + fmt.Sprintf("%v", resp.StatusCode) ))
-                    return
-                }
-            default:
-                imageB, Berr = hex.DecodeString(value[2:]) //stripping leading 0x
-                if Berr != nil {
-                    buffer.WriteString(loggerGen(4, "Unsuccesful Decoding " + fmt.Sprintf("%v", Berr)))
-                    return
-                }
-            
-        }
-        //WebDAV upload
-        if len(imageB) > 0 {
-            putbody := bytes.NewReader(imageB)
-            req, Perr := http.NewRequest("PUT", url, putbody)
-            req.Header.Set("Content-Type", "image/jpeg") 
-            req.Header.Add("Authorization", "ESP-APIKEY "+SQLImportConf.APIKey)
-            req.Header.Set("User-Agent", "Go-http-client/1.1")
-            response, Perr := client.Do(req)
-            if Perr != nil {
-                buffer.WriteString(loggerGen(4, "PUT connection issue: " + fmt.Sprintf("%v", http.StatusInternalServerError) ))  
-                return
-            }
-            defer response.Body.Close()
-            _, _ = io.Copy(ioutil.Discard, response.Body)
-            if response.StatusCode == 201 || response.StatusCode == 200 {
-                buffer.WriteString(loggerGen(1, "Uploaded"))
-                value = "/" + rel_link
-            } else {
-                buffer.WriteString(loggerGen(4, "Unsuccesful Upload: " + fmt.Sprintf("%v", response.StatusCode) ))
-                return
-            }
-        } else {
-            buffer.WriteString(loggerGen(4, "No Image to upload"))
-            return
-        }
-    }
+			} else {
+				buffer.WriteString(loggerGen(4, "Unsuccesful download: "+fmt.Sprintf("%v", resp.StatusCode)))
+				return
+			}
+		default:
+			imageB, Berr = hex.DecodeString(value[2:]) //stripping leading 0x
+			if Berr != nil {
+				buffer.WriteString(loggerGen(4, "Unsuccesful Decoding "+fmt.Sprintf("%v", Berr)))
+				return
+			}
 
-    espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-    espXmlmc.SetAPIKey(SQLImportConf.APIKey)
-    espXmlmc.SetParam("objectRef", "urn:sys:user:" + UserID)
-    espXmlmc.SetParam("sourceImage", value)
+		}
+		//WebDAV upload
+		if len(imageB) > 0 {
+			putbody := bytes.NewReader(imageB)
+			req, Perr := http.NewRequest("PUT", url, putbody)
+			req.Header.Set("Content-Type", "image/jpeg")
+			req.Header.Add("Authorization", "ESP-APIKEY "+SQLImportConf.APIKey)
+			req.Header.Set("User-Agent", "Go-http-client/1.1")
+			response, Perr := client.Do(req)
+			if Perr != nil {
+				buffer.WriteString(loggerGen(4, "PUT connection issue: "+fmt.Sprintf("%v", http.StatusInternalServerError)))
+				return
+			}
+			defer response.Body.Close()
+			_, _ = io.Copy(ioutil.Discard, response.Body)
+			if response.StatusCode == 201 || response.StatusCode == 200 {
+				buffer.WriteString(loggerGen(1, "Uploaded"))
+				value = "/" + rel_link
+			} else {
+				buffer.WriteString(loggerGen(4, "Unsuccesful Upload: "+fmt.Sprintf("%v", response.StatusCode)))
+				return
+			}
+		} else {
+			buffer.WriteString(loggerGen(4, "No Image to upload"))
+			return
+		}
+	}
 
-    XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("activity", "profileImageSet")
-    var xmlRespon xmlmcprofileSetImageResponse
-    if xmlmcErr != nil {
-        log.Fatal(xmlmcErr)
-        buffer.WriteString(loggerGen(4, "Unable to associate Image to User Profile: "+fmt.Sprintf("%v", xmlmcErr)))
-    }
-    err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
-    if err != nil {
-        buffer.WriteString(loggerGen(4, "Unable to Associate Image to User Profile: "+fmt.Sprintf("%v", err)))
-    } else {
-        if xmlRespon.MethodResult != constOK {
-            buffer.WriteString(loggerGen(4, "Unable to Associate Image to User Profile: "+xmlRespon.State.ErrorRet))
-        } else {
-            buffer.WriteString(loggerGen(1, "Image added to User: "+UserID))
-        }
-    }
+	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
+	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
+	espXmlmc.SetParam("objectRef", "urn:sys:user:"+UserID)
+	espXmlmc.SetParam("sourceImage", value)
+
+	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("activity", "profileImageSet")
+	var xmlRespon xmlmcprofileSetImageResponse
+	if xmlmcErr != nil {
+		log.Fatal(xmlmcErr)
+		buffer.WriteString(loggerGen(4, "Unable to associate Image to User Profile: "+fmt.Sprintf("%v", xmlmcErr)))
+	}
+	err := xml.Unmarshal([]byte(XMLSiteSearch), &xmlRespon)
+	if err != nil {
+		buffer.WriteString(loggerGen(4, "Unable to Associate Image to User Profile: "+fmt.Sprintf("%v", err)))
+	} else {
+		if xmlRespon.MethodResult != constOK {
+			buffer.WriteString(loggerGen(4, "Unable to Associate Image to User Profile: "+xmlRespon.State.ErrorRet))
+		} else {
+			buffer.WriteString(loggerGen(1, "Image added to User: "+UserID))
+		}
+	}
 }
 func userAddGroup(p map[string]string, buffer *bytes.Buffer, orgUnit OrgUnitStruct) bool {
 
@@ -1198,16 +1199,19 @@ func userAddGroup(p map[string]string, buffer *bytes.Buffer, orgUnit OrgUnitStru
 		return false
 	}
 	//-- Get Value of Attribute
-    t := template.New("orgunit" + strconv.Itoa(orgUnit.Type))
-    t, _ = t.Parse(orgUnit.Attribute)
-    buf := bytes.NewBufferString("");
-    t.Execute(buf, p)
-    value := buf.String()
-    if (value == "%!s(<nil>)") { value = "" }
-    buffer.WriteString(loggerGen(2, "SQL Attribute for Org Lookup: "+value))
-    if value == "" { return true }
+	t := template.New("orgunit" + strconv.Itoa(orgUnit.Type))
+	t, _ = t.Parse(orgUnit.Attribute)
+	buf := bytes.NewBufferString("")
+	t.Execute(buf, p)
+	value := buf.String()
+	if value == "%!s(<nil>)" {
+		value = ""
+	}
+	buffer.WriteString(loggerGen(2, "SQL Attribute for Org Lookup: "+value))
+	if value == "" {
+		return true
+	}
 
-    
 	orgAttributeName := processComplexField(value)
 	orgIsInCache, orgID := groupInCache(strconv.Itoa(orgUnit.Type) + orgAttributeName)
 	//-- Check if we have Chached the site already
@@ -1330,36 +1334,37 @@ func searchGroup(orgName string, orgUnit OrgUnitStruct, buffer *bytes.Buffer) (b
 	return boolReturn, strReturn
 }
 
-
 func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
-    buf2 := bytes.NewBufferString("");
+	buf2 := bytes.NewBufferString("")
 	//-- Do we Lookup Site
-    var p map[string]string
-    p = make(map[string]string)
-    
-    for key, value := range u {
-        p[key] = fmt.Sprintf("%s", value)
-    }
+	var p map[string]string
+	p = make(map[string]string)
 
-    userID := p[SQLImportConf.SQLConf.UserID]
-    
+	for key, value := range u {
+		p[key] = fmt.Sprintf("%s", value)
+	}
+
+	userID := p[SQLImportConf.SQLConf.UserID]
+
 	//-- Loop Through UserProfileMapping
 	for key := range userCreateArray {
 		field := userCreateArray[key]
 		value := SQLImportConf.UserMapping[field] //userMappingMap[name]
-        t := template.New(field)
-        t, _ = t.Parse(value)
-        buf := bytes.NewBufferString("");
-        t.Execute(buf, p)
+		t := template.New(field)
+		t, _ = t.Parse(value)
+		buf := bytes.NewBufferString("")
+		t.Execute(buf, p)
 		value = buf.String()
-        if (value == "%!s(<nil>)") { value = "" }
+		if value == "%!s(<nil>)" {
+			value = ""
+		}
 
 		//-- Process Site
 		if field == "Site" {
-            //-- Only use Site lookup if enabled and not set to Update only
-            if SQLImportConf.SiteLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString {
-                value = getSiteFromLookup(value, buf2)
-            }
+			//-- Only use Site lookup if enabled and not set to Update only
+			if SQLImportConf.SiteLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString {
+				value = getSiteFromLookup(value, buf2)
+			}
 		}
 		//-- Process Password Field
 		if field == "Password" {
@@ -1400,7 +1405,7 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 
 		//-- Only use Org lookup if enabled and not set to Update only
 		if SQLImportConf.OrgLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString && len(SQLImportConf.OrgLookup.OrgUnits) > 0 {
-			userAddGroups(p, buf2)            
+			userAddGroups(p, buf2)
 		}
 		//-- Process Account Status
 		if SQLImportConf.UserAccountStatus.Enabled && SQLImportConf.UserAccountStatus.Action != updateString {
@@ -1410,27 +1415,27 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		if SQLImportConf.UserRoleAction != updateString && len(SQLImportConf.Roles) > 0 {
 			userAddRoles(userID, buf2, espXmlmc)
 		}
-        
-        //-- Add Image
+
+		//-- Add Image
 		if SQLImportConf.ImageLink.Enabled && SQLImportConf.ImageLink.Action != updateString && SQLImportConf.ImageLink.URI != "" {
 			userAddImage(p, buf2)
 		}
-        
+
 		//-- Process Profile Details
-        boolUpdateProfile := userUpdateProfile(p, buf2, espXmlmc)
+		boolUpdateProfile := userUpdateProfile(p, buf2, espXmlmc)
 		if boolUpdateProfile != true {
 			err = errors.New("User Profile issue (c): " + buf2.String())
 			errorCountInc()
 			return false, err
 		}
 
-        logger(1, buf2.String() , false)
+		logger(1, buf2.String(), false)
 		createCountInc()
 		return true, nil
 	} else {
-    	//-- Process Profile Details as part of the dry run for testing
-    }
-    //-- DEBUG XML TO LOG FILE
+		//-- Process Profile Details as part of the dry run for testing
+	}
+	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
 	logger(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING), false)
 	createSkippedCountInc()
@@ -1438,7 +1443,6 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 
 	return true, nil
 }
-
 
 func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
 	UserID := p[SQLImportConf.SQLConf.UserID]
@@ -1450,12 +1454,14 @@ func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiL
 		field := userProfileArray[key]
 		value := SQLImportConf.UserProfileMapping[field]
 
-        t := template.New(field)
-        t, _ = t.Parse(value)
-        buf := bytes.NewBufferString("");
-        t.Execute(buf, p)
-        value = buf.String()
-        if (value == "%!s(<nil>)") { value = "" }
+		t := template.New(field)
+		t, _ = t.Parse(value)
+		buf := bytes.NewBufferString("")
+		t.Execute(buf, p)
+		value = buf.String()
+		if value == "%!s(<nil>)" {
+			value = ""
+		}
 
 		if field == "Manager" {
 			//-- Process User manager
@@ -1463,7 +1469,7 @@ func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiL
 				value = getManagerFromLookup(value, buffer)
 			}
 		}
-        
+
 		//-- if we have Value then set it
 		if value != "" {
 			espXmlmc.SetParam(field, value)
@@ -1508,7 +1514,6 @@ func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiL
 
 }
 
-
 func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	buffer.WriteString(loggerGen(1, "Set Status for User: "+fmt.Sprintf("%s", userID)+" Status:"+fmt.Sprintf("%s", status)))
 
@@ -1519,10 +1524,10 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	espXmlmc.SetParam("accountStatus", status)
 
 	XMLCreate, xmlmcErr := espXmlmc.Invoke("admin", "userSetAccountStatus")
-    
-    var XMLSTRING = espXmlmc.GetParam()
+
+	var XMLSTRING = espXmlmc.GetParam()
 	buffer.WriteString(loggerGen(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING)))
-    
+
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to Set User Status: "+fmt.Sprintf("%s", xmlmcErr), true)
@@ -1547,7 +1552,7 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 
 func userAddRoles(userID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
 
-    espXmlmc.SetParam("userId", userID)
+	espXmlmc.SetParam("userId", userID)
 	for _, role := range SQLImportConf.Roles {
 		espXmlmc.SetParam("role", role)
 		buffer.WriteString(loggerGen(1, "Add Role to User: "+role))
@@ -1570,7 +1575,6 @@ func userAddRoles(userID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 	buffer.WriteString(loggerGen(1, "Roles Added Successfully"))
 	return true
 }
-
 
 func checkUserOnInstance(userID string, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
 
@@ -1604,7 +1608,7 @@ func getSiteFromLookup(site string, buffer *bytes.Buffer) string {
 	buffer.WriteString(loggerGen(1, "Looking Up Site: "+siteAttributeName))
 	if siteAttributeName == "" {
 		return ""
-	}    
+	}
 	siteIsInCache, SiteIDCache := siteInCache(siteAttributeName)
 	//-- Check if we have Cached the site already
 	if siteIsInCache {
@@ -1622,9 +1626,8 @@ func getSiteFromLookup(site string, buffer *bytes.Buffer) string {
 }
 
 func processComplexField(s string) string {
-	return html.UnescapeString(s);
+	return html.UnescapeString(s)
 }
-
 
 //-- Function to Check if in Cache
 func siteInCache(siteName string) (bool, int) {
@@ -1660,7 +1663,7 @@ func searchSite(siteName string, buffer *bytes.Buffer) (bool, int) {
 	espXmlmc.CloseElement("searchFilter")
 	espXmlmc.SetParam("maxResults", "1")
 	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords")
-    
+
 	var xmlRespon xmlmcSiteListResponse
 	if xmlmcErr != nil {
 		buffer.WriteString(loggerGen(4, "Unable to Search for Site: "+fmt.Sprintf("%v", xmlmcErr)))
@@ -1696,7 +1699,7 @@ func searchSite(siteName string, buffer *bytes.Buffer) (bool, int) {
 func getManagerFromLookup(manager string, buffer *bytes.Buffer) string {
 
 	if manager == "" {
-        buffer.WriteString(loggerGen(1, "No Manager to search"))
+		buffer.WriteString(loggerGen(1, "No Manager to search"))
 		return ""
 	}
 	//-- Get Value of Attribute
@@ -1796,8 +1799,6 @@ func managerInCache(managerName string) (bool, string) {
 	mutexManagers.Unlock()
 	return boolReturn, stringReturn
 }
-
-
 
 //-- Generate Password String
 func generatePasswordString(n int) string {

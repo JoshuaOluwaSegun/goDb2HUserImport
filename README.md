@@ -153,13 +153,30 @@ Example JSON File:
 ** mysql = MySQL Server 4.1+, MariaDB
 ** mysql320 = MySQL Server v3.2.0 to v4.0
 ** swsql = Supportworks SQL (Core Services v3.x)
-* "Server" The address of the SQL server
-* "UserName" The username for the SQL database
-* "Password" Password for above User Name
-* "Port" SQL port
+** csv = Microsoft Access Text Driver (*.txt, *.csv)
+*** The first line of the CSV file needs to contain a field name (NO SPACES) and MUST be referenced in the .json mapping in ALLCAPS (similarly in the SQLConf.ContactID).
+** excel = Microsoft Excel Driver (*.xls, *.xlsx, ...)
+* "Database" The name of the Database; Set this to the Data Source Name of the ODBC set-up if the driver is either "csv" or "excel"
+* "Server" The address of the SQL server; Set this to "localhost" if the driver is either "csv" or "excel"
+* "UserName" The username for the SQL database; this is mandatory though not used for csv or excel drivers
+* "Password" Password for above User Name; this is mandatory though not used for csv or excel drivers
+* "Port" SQL port; this is mandatory though not used for csv or excel drivers
 * "UserID" Specifies the unique identifier field from the query below
 * "Encrypt" Boolean value to specify wether the connection between the script and the database should be encrypted. ''NOTE'': There is a bug in SQL Server 2008 and below that causes the connection to fail if the connection is encrypted. Only set this to true if your SQL Server has been patched accordingly.
 * "Query" The basic SQL query to retrieve asset information from the data source. See "AssetTypes below for further filtering
+** csv sample: "SELECT * FROM file_name_of.csv" - this allows one to choose between csv files in the same directory
+** excel sample: "SELECT * FROM [Name_of_Worksheet$]" - this allows one to choose between worksheets in the same workbook
+
+#### CSV or Excel
+One will need to download the 64bit version of the Microsoft Access Database Engine Redistributable:
+
+[https://www.microsoft.com/en-us/download/details.aspx?id=13255](https://www.microsoft.com/en-us/download/details.aspx?id=13255)
+
+Please study the screenshot (ODBC_csv_setup.png) for the setting of the ODBC DSN – the driver to select is "Microsoft Access Text Driver (*.txt, *.csv)"
+Directory should reflect the location where the csv file is to be stored.
+Please note that the ODBC Administrator WILL create a "schema.ini" file in the folder. Column Name Header and "CSV Delimited" need to be set and field types can be guessed or set (advisable to check each field to ensure it is either "char" (of sufficient length) or "integer"
+Please note that the schema.ini contains the delimiter information for each of the (text) files in the folder.
+
 
 #### UserMapping
 * Any value formatted with {.field} will be treated as the value contained in the field of the query result record
