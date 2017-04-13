@@ -30,15 +30,16 @@ import (
 	//SQL Package
 	"github.com/hornbill/sqlx"
 	//SQL Drivers
-	"github.com/hornbill/go-mssqldb"
-	"github.com/hornbill/mysql"
-	"github.com/jnewmano/mysql320" //MySQL v3.2.0 to v5 driver - Provides SWSQL (MySQL 4.0.16) support
+    _ "github.com/alexbrainman/odbc"
+	_ "github.com/hornbill/go-mssqldb"
+	_ "github.com/hornbill/mysql"
+	_ "github.com/jnewmano/mysql320" //MySQL v3.2.0 to v5 driver - Provides SWSQL (MySQL 4.0.16) support
 )
 
 //----- Constants -----
 const (
 	letterBytes  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	version      = "1.2.0"
+	version      = "1.2.1"
 	constOK      = "ok"
 	updateString = "Update"
 	createString = "Create"
