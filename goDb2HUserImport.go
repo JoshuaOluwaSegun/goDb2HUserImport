@@ -72,6 +72,9 @@ var (
 	logFileMutex        = &sync.Mutex{}
 	worker              sync.WaitGroup
 	maxGoroutines       = 6
+	loggerApi           *apiLib.XmlmcInstStruct
+	once                sync.Once
+	mutexLogger         = &sync.Mutex{}
 
 	userProfileArray = []string{
 		"MiddleName",
@@ -629,14 +632,25 @@ func setZone(zone string) {
 
 //-- Log to ESP
 func espLogger(message string, severity string) bool {
-	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
-	espXmlmc.SetParam("fileName", "SQL_User_Import")
-	espXmlmc.SetParam("group", "general")
-	espXmlmc.SetParam("severity", severity)
-	espXmlmc.SetParam("message", message)
 
-	XMLLogger, xmlmcErr := espXmlmc.Invoke("system", "logMessage")
+	// We lock the whole function so we dont reuse the same connection for multiple logging attempts
+	mutexLogger.Lock()
+	defer mutexLogger.Unlock()
+
+	// We initilaise the connection pool the first time the function is called and reuse it
+	// This is reuse the connections rather than creating a pool each invocation
+	once.Do(func() {
+		loggerApi = apiLib.NewXmlmcInstance(SQLImportConf.URL)
+	})
+	loggerApi.SetAPIKey(SQLImportConf.APIKey)
+	//We set a 5 second timeout as anything else calling espLogger will be locked waiting for completion so dont wait too long
+	loggerApi.SetTimeout(5)
+	loggerApi.SetParam("fileName", "SQL_User_Import")
+	loggerApi.SetParam("group", "general")
+	loggerApi.SetParam("severity", severity)
+	loggerApi.SetParam("message", message)
+
+	XMLLogger, xmlmcErr := loggerApi.Invoke("system", "logMessage")
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
 		logger(4, "Unable to write to log "+fmt.Sprintf("%s", xmlmcErr), true)
