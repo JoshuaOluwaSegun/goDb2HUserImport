@@ -30,7 +30,7 @@ import (
 	//SQL Package
 	"github.com/hornbill/sqlx"
 	//SQL Drivers
-    _ "github.com/alexbrainman/odbc"
+	_ "github.com/alexbrainman/odbc"
 	_ "github.com/hornbill/go-mssqldb"
 	_ "github.com/hornbill/mysql"
 	_ "github.com/jnewmano/mysql320" //MySQL v3.2.0 to v5 driver - Provides SWSQL (MySQL 4.0.16) support
@@ -48,7 +48,6 @@ const (
 var (
 	SQLImportConf       SQLImportConfStruct
 	xmlmcInstanceConfig xmlmcConfig
-	xmlmcUsers          []userListItemStruct
 	sites               []siteListStruct
 	managers            []managerListStruct
 	groups              []groupListStruct
@@ -60,57 +59,19 @@ var (
 	configVersion       bool
 	configWorkers       int
 	configMaxRoutines   string
-	BaseSQLQuery        string
 	timeNow             string
 	startTime           time.Time
 	endTime             time.Duration
 	errorCount          uint64
 	noValuesToUpdate    = "There are no values to update"
-	mutex               = &sync.Mutex{}
 	mutexBar            = &sync.Mutex{}
 	mutexCounters       = &sync.Mutex{}
-	mutexCustomers      = &sync.Mutex{}
-	mutexSite           = &sync.Mutex{}
 	mutexSites          = &sync.Mutex{}
 	mutexGroups         = &sync.Mutex{}
 	mutexManagers       = &sync.Mutex{}
 	logFileMutex        = &sync.Mutex{}
-	bufferMutex         = &sync.Mutex{}
 	worker              sync.WaitGroup
 	maxGoroutines       = 6
-
-	userProfileMappingMap = map[string]string{
-		"MiddleName":        "middleName",
-		"JobDescription":    "jobDescription",
-		"Manager":           "manager",
-		"WorkPhone":         "workPhone",
-		"Qualifications":    "qualifications",
-		"Interests":         "interests",
-		"Expertise":         "expertise",
-		"Gender":            "gender",
-		"Dob":               "dob",
-		"Nationality":       "nationality",
-		"Religion":          "religion",
-		"HomeTelephone":     "homeTelephone",
-		"SocialNetworkA":    "socialNetworkA",
-		"SocialNetworkB":    "socialNetworkB",
-		"SocialNetworkC":    "socialNetworkC",
-		"SocialNetworkD":    "socialNetworkD",
-		"SocialNetworkE":    "socialNetworkE",
-		"SocialNetworkF":    "socialNetworkF",
-		"SocialNetworkG":    "socialNetworkG",
-		"SocialNetworkH":    "socialNetworkH",
-		"PersonalInterests": "personalInterests",
-		"HomeAddress":       "homeAddress",
-		"PersonalBlog":      "personalBlog",
-		"Attrib1":           "attrib1",
-		"Attrib2":           "attrib2",
-		"Attrib3":           "attrib3",
-		"Attrib4":           "attrib4",
-		"Attrib5":           "attrib5",
-		"Attrib6":           "attrib6",
-		"Attrib7":           "attrib7",
-		"Attrib8":           "attrib8"}
 
 	userProfileArray = []string{
 		"MiddleName",
@@ -144,26 +105,6 @@ var (
 		"Attrib6",
 		"Attrib7",
 		"Attrib8"}
-
-	userMappingMap = map[string]string{
-		"Name":           "name",
-		"Password":       "password",
-		"UserType":       "userType",
-		"FirstName":      "firstName",
-		"LastName":       "lastName",
-		"JobTitle":       "jobTitle",
-		"Site":           "site",
-		"Phone":          "phone",
-		"Email":          "email",
-		"Mobile":         "mobile",
-		"AbsenceMessage": "absenceMessage",
-		"TimeZone":       "timeZone",
-		"Language":       "language",
-		"DateTimeFormat": "dateTimeFormat",
-		"DateFormat":     "dateFormat",
-		"TimeFormat":     "timeFormat",
-		"CurrencySymbol": "currencySymbol",
-		"CountryCode":    "countryCode"}
 
 	userUpdateArray = []string{
 		"userId",
@@ -252,64 +193,10 @@ type counterTypeStruct struct {
 	createskipped  uint16
 	profileSkipped uint16
 }
-type userMappingStruct struct {
-	UserID         string
-	UserType       string
-	Name           string
-	Password       string
-	FirstName      string
-	LastName       string
-	JobTitle       string
-	Site           string
-	Phone          string
-	Email          string
-	Mobile         string
-	AbsenceMessage string
-	TimeZone       string
-	Language       string
-	DateTimeFormat string
-	DateFormat     string
-	TimeFormat     string
-	CurrencySymbol string
-	CountryCode    string
-}
 type userAccountStatusStruct struct {
 	Action  string
 	Enabled bool
 	Status  string
-}
-type userProfileMappingStruct struct {
-	MiddleName        string
-	JobDescription    string
-	Manager           string
-	WorkPhone         string
-	Qualifications    string
-	Interests         string
-	Expertise         string
-	Gender            string
-	Dob               string
-	Nationality       string
-	Religion          string
-	HomeTelephone     string
-	SocialNetworkA    string
-	SocialNetworkB    string
-	SocialNetworkC    string
-	SocialNetworkD    string
-	SocialNetworkE    string
-	SocialNetworkF    string
-	SocialNetworkG    string
-	SocialNetworkH    string
-	PersonalInterests string
-	HomeAddress       string
-	PersonalBlog      string
-	Attrib1           string
-	Attrib2           string
-	Attrib3           string
-	Attrib4           string
-	Attrib5           string
-	Attrib6           string
-	Attrib7           string
-	Attrib8           string
 }
 type userManagerStruct struct {
 	Action  string
@@ -327,15 +214,6 @@ type imageLinkStruct struct {
 	UploadType string
 	ImageType  string
 	URI        string
-}
-type orgLookupStructOLD struct {
-	Action      string
-	Enabled     bool
-	Attribute   string
-	Type        int
-	Membership  string
-	TasksView   bool
-	TasksAction bool
 }
 type orgLookupStruct struct {
 	Action   string
@@ -403,13 +281,6 @@ type paramsCheckUsersStruct struct {
 }
 type paramsStruct struct {
 	SessionID string `xml:"sessionId"`
-}
-type paramsUserListStruct struct {
-	UserListItem []userListItemStruct `xml:"userListItem"`
-}
-type userListItemStruct struct {
-	UserID string `xml:"userId"`
-	Name   string `xml:"name"`
 }
 
 //###
@@ -487,7 +358,7 @@ func main() {
 	err := validateConf()
 	if err != nil {
 		logger(4, fmt.Sprintf("%v", err), true)
-		logger(4, "Please Check your Configuration File: "+fmt.Sprintf("%s", configFileName), true)
+		logger(4, "Please Check your Configuration File: "+configFileName, true)
 		return
 	}
 
@@ -543,7 +414,7 @@ func outputEnd() {
 	logger(1, "Profiles Skipped: "+fmt.Sprintf("%d", counters.profileSkipped), true)
 
 	//-- Show Time Takens
-	endTime = time.Now().Sub(startTime)
+	endTime = time.Since(startTime)
 	logger(1, "Time Taken: "+fmt.Sprintf("%v", endTime), true)
 	//-- complete
 	complete()
@@ -586,9 +457,9 @@ func outputFlags() {
 	//-- Output
 	logger(1, "---- XMLMC SQL Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
 
-	logger(1, "Flag - Config File "+fmt.Sprintf("%s", configFileName), true)
-	logger(1, "Flag - Zone "+fmt.Sprintf("%s", configZone), true)
-	logger(1, "Flag - Log Prefix "+fmt.Sprintf("%s", configLogPrefix), true)
+	logger(1, "Flag - Config File "+configFileName, true)
+	logger(1, "Flag - Zone "+configZone, true)
+	logger(1, "Flag - Log Prefix "+configLogPrefix, true)
 	logger(1, "Flag - Dry Run "+fmt.Sprintf("%v", configDryRun), true)
 	logger(1, "Flag - Workers "+fmt.Sprintf("%v", configWorkers), false)
 }
@@ -663,9 +534,6 @@ func loggerGen(t int, s string) string {
 	currentTime := time.Now().UTC()
 	time := currentTime.Format("2006/01/02 15:04:05")
 	return time + " " + errorLogPrefix + s + "\n"
-}
-func loggerWriteBuffer(s string) {
-	logger(0, s, false)
 }
 
 //-- Logging function
@@ -757,8 +625,6 @@ func setInstance(strZone string, instanceID string) bool {
 // Set Instance Zone to Overide Live
 func setZone(zone string) {
 	xmlmcInstanceConfig.zone = zone
-
-	return
 }
 
 //-- Log to ESP
@@ -832,8 +698,7 @@ func buildConnectionString() string {
 			connectString = connectString + ";encrypt=disable"
 		}
 		if SQLImportConf.SQLConf.Port != 0 {
-			var dbPortSetting string
-			dbPortSetting = strconv.Itoa(SQLImportConf.SQLConf.Port)
+			dbPortSetting := strconv.Itoa(SQLImportConf.SQLConf.Port)
 			connectString = connectString + ";port=" + dbPortSetting
 		}
 
@@ -841,8 +706,7 @@ func buildConnectionString() string {
 		connectString = SQLImportConf.SQLConf.UserName + ":" + SQLImportConf.SQLConf.Password
 		connectString = connectString + "@tcp(" + SQLImportConf.SQLConf.Server + ":"
 		if SQLImportConf.SQLConf.Port != 0 {
-			var dbPortSetting string
-			dbPortSetting = strconv.Itoa(SQLImportConf.SQLConf.Port)
+			dbPortSetting := strconv.Itoa(SQLImportConf.SQLConf.Port)
 			connectString = connectString + dbPortSetting
 		} else {
 			connectString = connectString + "3306"
@@ -881,11 +745,11 @@ func queryDatabase() (bool, []map[string]interface{}) {
 	}
 	//Connect to the JSON specified DB
 	db, err := sqlx.Open(SQLImportConf.SQLConf.Driver, connString)
-	defer db.Close()
 	if err != nil {
 		logger(4, " [DATABASE] Database Connection Error: "+fmt.Sprintf("%v", err), true)
 		return false, ArrUserMaps
 	}
+	defer db.Close()
 	//Check connection is open
 	err = db.Ping()
 	if err != nil {
@@ -982,8 +846,7 @@ func processUsers(arrUsers []map[string]interface{}) {
 func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
 	buf2 := bytes.NewBufferString("")
 	//-- Do we Lookup Site
-	var p map[string]string
-	p = make(map[string]string)
+	p := make(map[string]string)
 	for key, value := range u {
 		p[key] = fmt.Sprintf("%s", value)
 	}
@@ -1081,7 +944,7 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 	updateSkippedCountInc()
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	logger(1, "User Update XML "+fmt.Sprintf("%s", XMLSTRING), false)
+	logger(1, "User Update XML "+XMLSTRING, false)
 	espXmlmc.ClearParam()
 
 	return true, nil
@@ -1147,6 +1010,10 @@ func userAddImage(p map[string]string, buffer *bytes.Buffer) {
 		if len(imageB) > 0 {
 			putbody := bytes.NewReader(imageB)
 			req, Perr := http.NewRequest("PUT", url, putbody)
+			if Perr != nil {
+				buffer.WriteString(loggerGen(4, "PUT Request issue: "+fmt.Sprintf("%v", http.StatusInternalServerError)))
+				return
+			}
 			req.Header.Set("Content-Type", "image/jpeg")
 			req.Header.Add("Authorization", "ESP-APIKEY "+SQLImportConf.APIKey)
 			req.Header.Set("User-Agent", "Go-http-client/1.1")
@@ -1338,8 +1205,7 @@ func searchGroup(orgName string, orgUnit OrgUnitStruct, buffer *bytes.Buffer) (b
 func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
 	buf2 := bytes.NewBufferString("")
 	//-- Do we Lookup Site
-	var p map[string]string
-	p = make(map[string]string)
+	p := make(map[string]string)
 
 	for key, value := range u {
 		p[key] = fmt.Sprintf("%s", value)
@@ -1433,12 +1299,10 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		logger(1, buf2.String(), false)
 		createCountInc()
 		return true, nil
-	} else {
-		//-- Process Profile Details as part of the dry run for testing
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	logger(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING), false)
+	logger(1, "User Create XML "+XMLSTRING, false)
 	createSkippedCountInc()
 	espXmlmc.ClearParam()
 
@@ -1508,7 +1372,7 @@ func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiL
 	}
 	//-- DEBUG XML TO LOG FILE
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Profile Update XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Profile Update XML "+XMLSTRING))
 	profileSkippedCountInc()
 	espXmlmc.ClearParam()
 	return true
@@ -1516,7 +1380,7 @@ func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiL
 }
 
 func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
-	buffer.WriteString(loggerGen(1, "Set Status for User: "+fmt.Sprintf("%s", userID)+" Status:"+fmt.Sprintf("%s", status)))
+	buffer.WriteString(loggerGen(1, "Set Status for User: "+userID+" Status:"+status))
 
 	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
 	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
@@ -1527,7 +1391,7 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 	XMLCreate, xmlmcErr := espXmlmc.Invoke("admin", "userSetAccountStatus")
 
 	var XMLSTRING = espXmlmc.GetParam()
-	buffer.WriteString(loggerGen(1, "User Create XML "+fmt.Sprintf("%s", XMLSTRING)))
+	buffer.WriteString(loggerGen(1, "User Create XML "+XMLSTRING))
 
 	var xmlRespon xmlmcResponse
 	if xmlmcErr != nil {
@@ -1544,7 +1408,7 @@ func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
 			buffer.WriteString(loggerGen(4, "Unable to Set User Status 111: "+xmlRespon.State.ErrorRet))
 			return false
 		}
-		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+fmt.Sprintf("%s", status)))
+		buffer.WriteString(loggerGen(1, "User Status Already Set to: "+status))
 		return true
 	}
 	buffer.WriteString(loggerGen(1, "User Status Set Successfully"))
