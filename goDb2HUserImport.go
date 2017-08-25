@@ -39,7 +39,7 @@ import (
 //----- Constants -----
 const (
 	letterBytes  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	version      = "1.2.1"
+	version      = "1.2.2"
 	constOK      = "ok"
 	updateString = "Update"
 	createString = "Create"
@@ -69,12 +69,19 @@ var (
 	mutexSites          = &sync.Mutex{}
 	mutexGroups         = &sync.Mutex{}
 	mutexManagers       = &sync.Mutex{}
-	logFileMutex        = &sync.Mutex{}
-	worker              sync.WaitGroup
 	maxGoroutines       = 6
 	loggerApi           *apiLib.XmlmcInstStruct
 	once                sync.Once
+	onceLog             sync.Once
 	mutexLogger         = &sync.Mutex{}
+	mutexLog            = &sync.Mutex{}
+	f                   *os.File
+	client              = http.Client{
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: 1,
+		},
+		Timeout: time.Duration(10 * time.Second),
+	}
 
 	userProfileArray = []string{
 		"MiddleName",
@@ -541,35 +548,42 @@ func loggerGen(t int, s string) string {
 
 //-- Logging function
 func logger(t int, s string, outputtoCLI bool) {
-	//-- Curreny WD
-	cwd, _ := os.Getwd()
-	//-- Log Folder
-	logPath := cwd + "/log"
-	//-- Log File
-	logFileName := logPath + "/" + configLogPrefix + "SQL_User_Import_" + timeNow + ".log"
+
+	mutexLog.Lock()
+	defer mutexLog.Unlock()
+
+	onceLog.Do(func() {
+		//-- Curreny WD
+		cwd, _ := os.Getwd()
+		//-- Log Folder
+		logPath := cwd + "/log"
+		//-- Log File
+		logFileName := logPath + "/" + configLogPrefix + "SQL_User_Import_" + timeNow + ".log"
+		//red := color.New(color.FgRed).PrintfFunc()
+		//orange := color.New(color.FgCyan).PrintfFunc()
+		//-- If Folder Does Not Exist then create it
+		if _, err := os.Stat(logPath); os.IsNotExist(err) {
+			err := os.Mkdir(logPath, 0777)
+			if err != nil {
+				fmt.Printf("Error Creating Log Folder %q: %s \r", logPath, err)
+				os.Exit(101)
+			}
+		}
+
+		//-- Open Log File
+		var err error
+		f, err = os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+		if err != nil {
+			fmt.Printf("Error Creating Log File %q: %s \n", logFileName, err)
+			os.Exit(100)
+		}
+		// assign it to the standard logger
+		log.SetOutput(f)
+	})
+	// don't forget to close it
+	//defer f.Close()
 	red := color.New(color.FgRed).PrintfFunc()
 	orange := color.New(color.FgCyan).PrintfFunc()
-	//-- If Folder Does Not Exist then create it
-	if _, err := os.Stat(logPath); os.IsNotExist(err) {
-		err := os.Mkdir(logPath, 0777)
-		if err != nil {
-			fmt.Printf("Error Creating Log Folder %q: %s \r", logPath, err)
-			os.Exit(101)
-		}
-	}
-
-	//-- Open Log File
-	f, err := os.OpenFile(logFileName, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
-	if err != nil {
-		fmt.Printf("Error Creating Log File %q: %s \n", logFileName, err)
-		os.Exit(100)
-	}
-	// don't forget to close it
-	defer f.Close()
-	// assign it to the standard logger
-	logFileMutex.Lock()
-	log.SetOutput(f)
-	logFileMutex.Unlock()
 	var errorLogPrefix = ""
 	//-- Create Log Entry
 	switch t {
@@ -788,6 +802,11 @@ func queryDatabase() (bool, []map[string]interface{}) {
 		intUserCount++
 		results := make(map[string]interface{})
 		err = rows.MapScan(results)
+		if err != nil {
+			//We are going to skip this record as it did not scan properly
+			logger(4, " [DATABASE] Database Scan Error: "+fmt.Sprintf("%v", err), true)
+			continue
+		}
 		//Stick marshalled data map in to parent slice
 		ArrUserMaps = append(ArrUserMaps, results)
 	}
@@ -803,61 +822,87 @@ func processUsers(arrUsers []map[string]interface{}) {
 	bar := pb.StartNew(len(arrUsers))
 	logger(1, "Processing Users", false)
 
-	//Get the identity of the AssetID field from the config
-	userIDField := fmt.Sprintf("%v", SQLImportConf.SQLConf.UserID)
-	//-- Loop each asset
-	maxGoroutinesGuard := make(chan struct{}, maxGoroutines)
+	total := len(arrUsers)
+	jobs := make(chan map[string]interface{}, total)
+	results := make(chan int, total)
+	workers := maxGoroutines
 
-	for _, customerRecord := range arrUsers {
-		maxGoroutinesGuard <- struct{}{}
-		worker.Add(1)
-		userMap := customerRecord
-		//Get the asset ID for the current record
-		userID := fmt.Sprintf("%s", userMap[userIDField])
-		logger(1, "User ID: "+userID, false)
-		if userID != "" {
-			//logger(1, "User ID: "+fmt.Sprintf("%s", userID), false)
-			espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-			espXmlmc.SetAPIKey(SQLImportConf.APIKey)
-			go func() {
-				defer worker.Done()
-				time.Sleep(1 * time.Millisecond)
-				mutexBar.Lock()
-				bar.Increment()
-				mutexBar.Unlock()
-
-				var boolUpdate = false
-				var isErr = false
-				boolUpdate, err := checkUserOnInstance(userID, espXmlmc)
-				if err != nil {
-					logger(4, "Unable to Search For User: "+fmt.Sprintf("%v", err), true)
-					isErr = true
-				}
-				//-- Update or Create Asset
-				if !isErr {
-					if boolUpdate {
-						logger(1, "Update Customer: "+userID, false)
-						_, errUpdate := updateUser(userMap, espXmlmc)
-						if errUpdate != nil {
-							logger(4, "Unable to Update User: "+fmt.Sprintf("%v", errUpdate), false)
-						}
-					} else {
-						logger(1, "Create Customer: "+userID, false)
-						_, errorCreate := createUser(userMap, espXmlmc)
-						if errorCreate != nil {
-							logger(4, "Unable to Create User: "+fmt.Sprintf("%v", errorCreate), false)
-						}
-					}
-				}
-				<-maxGoroutinesGuard
-			}()
-		}
+	if total < workers {
+		workers = total
 	}
-	worker.Wait()
+	//This starts up 3 workers, initially blocked because there are no jobs yet.
+	for w := 1; w <= workers; w++ {
+		go ProcessUserWorkers(jobs, results, bar)
+	}
+
+	//-- Here we send a job for each user we have to process
+	for _, usersMaps := range arrUsers {
+		jobs <- usersMaps
+	}
+	close(jobs)
+	//-- Finally we collect all the results of the work.
+	for a := 1; a <= total; a++ {
+		<-results
+	}
+
+	//Get the identity of the AssetID field from the config
 	bar.FinishPrint("Processing Complete!")
 }
 
-func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
+func ProcessUserWorkers(jobs <-chan map[string]interface{}, results chan<- int, bar *pb.ProgressBar) {
+
+	//We should create the APi connections here and pass the reference around
+	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
+	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
+
+	espXmlmcLookup := apiLib.NewXmlmcInstance(SQLImportConf.URL)
+	espXmlmcLookup.SetAPIKey(SQLImportConf.APIKey)
+
+	for customerRecord := range jobs {
+		userMap := customerRecord
+		userIDField := fmt.Sprintf("%v", SQLImportConf.SQLConf.UserID)
+		//Get the asset ID for the current record
+		userID := fmt.Sprintf("%s", userMap[userIDField])
+		logger(1, "User ID: "+userID, false)
+		if userID == "" {
+			//No userId so skip to the next
+			continue
+		}
+		//Increment the bar
+		mutexBar.Lock()
+		bar.Increment()
+		mutexBar.Unlock()
+
+		var boolUpdate = false
+		var isErr = false
+		boolUpdate, err := checkUserOnInstance(userID, espXmlmc)
+		if err != nil {
+			logger(4, "Unable to Search For User: "+fmt.Sprintf("%v", err), true)
+			isErr = true
+			continue
+		}
+		//-- Update or Create Asset
+		if !isErr {
+			if boolUpdate {
+				logger(1, "Update Customer: "+userID, false)
+				_, errUpdate := updateUser(userMap, espXmlmc, espXmlmcLookup)
+				if errUpdate != nil {
+					logger(4, "Unable to Update User: "+fmt.Sprintf("%v", errUpdate), false)
+				}
+			} else {
+				logger(1, "Create Customer: "+userID, false)
+				_, errorCreate := createUser(userMap, espXmlmc, espXmlmcLookup)
+				if errorCreate != nil {
+					logger(4, "Unable to Create User: "+fmt.Sprintf("%v", errorCreate), false)
+				}
+			}
+		}
+	}
+	bar.FinishPrint("Processing Complete!")
+
+}
+
+func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct, espXmlmcLookup *apiLib.XmlmcInstStruct) (bool, error) {
 	buf2 := bytes.NewBufferString("")
 	//-- Do we Lookup Site
 	p := make(map[string]string)
@@ -870,7 +915,11 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		value := SQLImportConf.UserMapping[field] //userMappingMap[name]
 
 		t := template.New(field)
-		t, _ = t.Parse(value)
+		t, err := t.Parse(value)
+		if err != nil {
+			logger(4, "Unable to parse TEmplate: "+fmt.Sprintf("%v", err), false)
+			continue
+		}
 		buf := bytes.NewBufferString("")
 		t.Execute(buf, p)
 		value = buf.String()
@@ -882,7 +931,7 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		if field == "Site" {
 			//-- Only use Site lookup if enabled and not set to Update only
 			if SQLImportConf.SiteLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString {
-				value = getSiteFromLookup(value, buf2)
+				value = getSiteFromLookup(value, buf2, espXmlmcLookup)
 			}
 		}
 
@@ -897,7 +946,10 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		}
 		//-- if we have Value then set it
 		if value != "" {
-			espXmlmc.SetParam(field, value)
+			err := espXmlmc.SetParam(field, value)
+			if err != nil {
+				logger(4, "Cant set Paramter: "+fmt.Sprintf("%v", err), false)
+			}
 		}
 	}
 
@@ -921,11 +973,11 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		}
 		//-- Only use Org lookup if enabled and not set to create only
 		if SQLImportConf.OrgLookup.Enabled && SQLImportConf.OrgLookup.Action != createString && len(SQLImportConf.OrgLookup.OrgUnits) > 0 {
-			userAddGroups(p, buf2)
+			userAddGroups(p, buf2, espXmlmc)
 		}
 		//-- Process User Status
 		if SQLImportConf.UserAccountStatus.Enabled && SQLImportConf.UserAccountStatus.Action != createString {
-			userSetStatus(userID, SQLImportConf.UserAccountStatus.Status, buf2)
+			userSetStatus(userID, SQLImportConf.UserAccountStatus.Status, buf2, espXmlmc)
 		}
 
 		//-- Add Roles
@@ -935,11 +987,11 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 
 		//-- Add Image
 		if SQLImportConf.ImageLink.Enabled && SQLImportConf.ImageLink.Action != createString && SQLImportConf.ImageLink.URI != "" {
-			userAddImage(p, buf2)
+			userAddImage(p, buf2, espXmlmc)
 		}
 
 		//-- Process Profile Details
-		boolUpdateProfile := userUpdateProfile(p, buf2, espXmlmc)
+		boolUpdateProfile := userUpdateProfile(p, buf2, espXmlmc, espXmlmcLookup)
 		if boolUpdateProfile != true {
 			err = errors.New("User Profile Issue (u): " + buf2.String())
 			errorCountInc()
@@ -964,13 +1016,13 @@ func updateUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 	return true, nil
 }
 
-func userAddGroups(p map[string]string, buffer *bytes.Buffer) bool {
+func userAddGroups(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
 	for _, orgUnit := range SQLImportConf.OrgLookup.OrgUnits {
-		userAddGroup(p, buffer, orgUnit)
+		userAddGroup(p, buffer, orgUnit, espXmlmc)
 	}
 	return true
 }
-func userAddImage(p map[string]string, buffer *bytes.Buffer) {
+func userAddImage(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) {
 	UserID := p[SQLImportConf.SQLConf.UserID]
 
 	t := template.New("i" + UserID)
@@ -988,9 +1040,6 @@ func userAddImage(p map[string]string, buffer *bytes.Buffer) {
 
 	if strings.ToUpper(SQLImportConf.ImageLink.UploadType) != "URI" {
 		// get binary to upload via WEBDAV and then set value to relative "session" URI
-		client := http.Client{
-			Timeout: time.Duration(10 * time.Second),
-		}
 
 		rel_link := "session/" + UserID
 		url := SQLImportConf.DAVURL + rel_link
@@ -1010,6 +1059,7 @@ func userAddImage(p map[string]string, buffer *bytes.Buffer) {
 
 			} else {
 				buffer.WriteString(loggerGen(4, "Unsuccesful download: "+fmt.Sprintf("%v", resp.StatusCode)))
+				_, _ = io.Copy(ioutil.Discard, resp.Body)
 				return
 			}
 		default:
@@ -1051,8 +1101,6 @@ func userAddImage(p map[string]string, buffer *bytes.Buffer) {
 		}
 	}
 
-	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
 	espXmlmc.SetParam("objectRef", "urn:sys:user:"+UserID)
 	espXmlmc.SetParam("sourceImage", value)
 
@@ -1073,7 +1121,7 @@ func userAddImage(p map[string]string, buffer *bytes.Buffer) {
 		}
 	}
 }
-func userAddGroup(p map[string]string, buffer *bytes.Buffer, orgUnit OrgUnitStruct) bool {
+func userAddGroup(p map[string]string, buffer *bytes.Buffer, orgUnit OrgUnitStruct, espXmlmc *apiLib.XmlmcInstStruct) bool {
 
 	//-- Check if Site Attribute is set
 	if orgUnit.Attribute == "" {
@@ -1099,15 +1147,15 @@ func userAddGroup(p map[string]string, buffer *bytes.Buffer, orgUnit OrgUnitStru
 	//-- Check if we have Chached the site already
 	if orgIsInCache {
 		buffer.WriteString(loggerGen(1, "Found Org in Cache "+orgID))
-		userAddGroupAsoc(p, orgUnit, orgID, buffer)
+		userAddGroupAsoc(p, orgUnit, orgID, buffer, espXmlmc)
 		return true
 	}
 
 	//-- We Get here if not in cache
-	orgIsOnInstance, orgID := searchGroup(orgAttributeName, orgUnit, buffer)
+	orgIsOnInstance, orgID := searchGroup(orgAttributeName, orgUnit, buffer, espXmlmc)
 	if orgIsOnInstance {
 		buffer.WriteString(loggerGen(1, "Org Lookup found Id "+orgID))
-		userAddGroupAsoc(p, orgUnit, orgID, buffer)
+		userAddGroupAsoc(p, orgUnit, orgID, buffer, espXmlmc)
 		return true
 	}
 	buffer.WriteString(loggerGen(1, "Unable to Find Organisation "+orgAttributeName))
@@ -1115,10 +1163,8 @@ func userAddGroup(p map[string]string, buffer *bytes.Buffer, orgUnit OrgUnitStru
 
 }
 
-func userAddGroupAsoc(p map[string]string, orgUnit OrgUnitStruct, orgID string, buffer *bytes.Buffer) {
+func userAddGroupAsoc(p map[string]string, orgUnit OrgUnitStruct, orgID string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) {
 	UserID := p[SQLImportConf.SQLConf.UserID]
-	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
 	espXmlmc.SetParam("userId", UserID)
 	espXmlmc.SetParam("groupId", orgID)
 	espXmlmc.SetParam("memberRole", orgUnit.Membership)
@@ -1169,12 +1215,9 @@ func groupInCache(groupName string) (bool, string) {
 }
 
 //-- Function to Check if site is on the instance
-func searchGroup(orgName string, orgUnit OrgUnitStruct, buffer *bytes.Buffer) (bool, string) {
+func searchGroup(orgName string, orgUnit OrgUnitStruct, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, string) {
 	boolReturn := false
 	strReturn := ""
-	//-- ESP Query for site
-	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
 	if orgName == "" {
 		return boolReturn, strReturn
 	}
@@ -1216,7 +1259,7 @@ func searchGroup(orgName string, orgUnit OrgUnitStruct, buffer *bytes.Buffer) (b
 	return boolReturn, strReturn
 }
 
-func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (bool, error) {
+func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct, espXmlmcLookup *apiLib.XmlmcInstStruct) (bool, error) {
 	buf2 := bytes.NewBufferString("")
 	//-- Do we Lookup Site
 	p := make(map[string]string)
@@ -1244,7 +1287,7 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 		if field == "Site" {
 			//-- Only use Site lookup if enabled and not set to Update only
 			if SQLImportConf.SiteLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString {
-				value = getSiteFromLookup(value, buf2)
+				value = getSiteFromLookup(value, buf2, espXmlmcLookup)
 			}
 		}
 		//-- Process Password Field
@@ -1286,11 +1329,11 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 
 		//-- Only use Org lookup if enabled and not set to Update only
 		if SQLImportConf.OrgLookup.Enabled && SQLImportConf.OrgLookup.Action != updateString && len(SQLImportConf.OrgLookup.OrgUnits) > 0 {
-			userAddGroups(p, buf2)
+			userAddGroups(p, buf2, espXmlmc)
 		}
 		//-- Process Account Status
 		if SQLImportConf.UserAccountStatus.Enabled && SQLImportConf.UserAccountStatus.Action != updateString {
-			userSetStatus(userID, SQLImportConf.UserAccountStatus.Status, buf2)
+			userSetStatus(userID, SQLImportConf.UserAccountStatus.Status, buf2, espXmlmc)
 		}
 
 		if SQLImportConf.UserRoleAction != updateString && len(SQLImportConf.Roles) > 0 {
@@ -1299,11 +1342,11 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 
 		//-- Add Image
 		if SQLImportConf.ImageLink.Enabled && SQLImportConf.ImageLink.Action != updateString && SQLImportConf.ImageLink.URI != "" {
-			userAddImage(p, buf2)
+			userAddImage(p, buf2, espXmlmc)
 		}
 
 		//-- Process Profile Details
-		boolUpdateProfile := userUpdateProfile(p, buf2, espXmlmc)
+		boolUpdateProfile := userUpdateProfile(p, buf2, espXmlmc, espXmlmcLookup)
 		if boolUpdateProfile != true {
 			err = errors.New("User Profile issue (c): " + buf2.String())
 			errorCountInc()
@@ -1323,7 +1366,7 @@ func createUser(u map[string]interface{}, espXmlmc *apiLib.XmlmcInstStruct) (boo
 	return true, nil
 }
 
-func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
+func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct, espXmlmcLookup *apiLib.XmlmcInstStruct) bool {
 	UserID := p[SQLImportConf.SQLConf.UserID]
 	buffer.WriteString(loggerGen(1, "Processing User Profile Data "+UserID))
 	espXmlmc.OpenElement("profileData")
@@ -1345,7 +1388,7 @@ func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiL
 		if field == "Manager" {
 			//-- Process User manager
 			if SQLImportConf.UserManagerMapping.Enabled && SQLImportConf.UserManagerMapping.Action != updateString {
-				value = getManagerFromLookup(value, buffer)
+				value = getManagerFromLookup(value, buffer, espXmlmcLookup)
 			}
 		}
 
@@ -1393,11 +1436,8 @@ func userUpdateProfile(p map[string]string, buffer *bytes.Buffer, espXmlmc *apiL
 
 }
 
-func userSetStatus(userID string, status string, buffer *bytes.Buffer) bool {
+func userSetStatus(userID string, status string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) bool {
 	buffer.WriteString(loggerGen(1, "Set Status for User: "+userID+" Status:"+status))
-
-	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
 
 	espXmlmc.SetParam("userId", userID)
 	espXmlmc.SetParam("accountStatus", status)
@@ -1479,7 +1519,7 @@ func checkUserOnInstance(userID string, espXmlmc *apiLib.XmlmcInstStruct) (bool,
 }
 
 //-- Function to search for site
-func getSiteFromLookup(site string, buffer *bytes.Buffer) string {
+func getSiteFromLookup(site string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) string {
 	siteReturn := ""
 
 	//-- Get Value of Attribute
@@ -1494,7 +1534,7 @@ func getSiteFromLookup(site string, buffer *bytes.Buffer) string {
 		siteReturn = strconv.Itoa(SiteIDCache)
 		buffer.WriteString(loggerGen(1, "Found Site in Cache: "+siteReturn))
 	} else {
-		siteIsOnInstance, SiteIDInstance := searchSite(siteAttributeName, buffer)
+		siteIsOnInstance, SiteIDInstance := searchSite(siteAttributeName, buffer, espXmlmc)
 		//-- If Returned set output
 		if siteIsOnInstance {
 			siteReturn = strconv.Itoa(SiteIDInstance)
@@ -1526,12 +1566,9 @@ func siteInCache(siteName string) (bool, int) {
 }
 
 //-- Function to Check if site is on the instance
-func searchSite(siteName string, buffer *bytes.Buffer) (bool, int) {
+func searchSite(siteName string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, int) {
 	boolReturn := false
 	intReturn := 0
-	//-- ESP Query for site
-	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
 	if siteName == "" {
 		return boolReturn, intReturn
 	}
@@ -1575,7 +1612,7 @@ func searchSite(siteName string, buffer *bytes.Buffer) (bool, int) {
 	return boolReturn, intReturn
 }
 
-func getManagerFromLookup(manager string, buffer *bytes.Buffer) string {
+func getManagerFromLookup(manager string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) string {
 
 	if manager == "" {
 		buffer.WriteString(loggerGen(1, "No Manager to search"))
@@ -1599,7 +1636,7 @@ func getManagerFromLookup(manager string, buffer *bytes.Buffer) string {
 		return ManagerIDCache
 	}
 	buffer.WriteString(loggerGen(1, "Manager Not In Cache Searching"))
-	ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer)
+	ManagerIsOnInstance, ManagerIDInstance := searchManager(ManagerAttributeName, buffer, espXmlmc)
 	//-- If Returned set output
 	if ManagerIsOnInstance {
 		buffer.WriteString(loggerGen(1, "Manager Lookup found Id "+ManagerIDInstance))
@@ -1611,12 +1648,9 @@ func getManagerFromLookup(manager string, buffer *bytes.Buffer) string {
 }
 
 //-- Search Manager on Instance
-func searchManager(managerName string, buffer *bytes.Buffer) (bool, string) {
+func searchManager(managerName string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcInstStruct) (bool, string) {
 	boolReturn := false
 	strReturn := ""
-	//-- ESP Query for site
-	espXmlmc := apiLib.NewXmlmcInstance(SQLImportConf.URL)
-	espXmlmc.SetAPIKey(SQLImportConf.APIKey)
 	espXmlmc.SetTrace("SQLUserImport")
 	if managerName == "" {
 		return boolReturn, strReturn
