@@ -841,11 +841,10 @@ func processUsers(arrUsers []map[string]interface{}) {
 	}
 	close(jobs)
 	//-- Finally we collect all the results of the work.
-	for a := 1; a <= total; a++ {
+	for a := 1; a <= workers; a++ {
 		<-results
 	}
 
-	//Get the identity of the AssetID field from the config
 	bar.FinishPrint("Processing Complete!")
 }
 
@@ -898,7 +897,8 @@ func ProcessUserWorkers(jobs <-chan map[string]interface{}, results chan<- int, 
 			}
 		}
 	}
-	bar.FinishPrint("Processing Complete!")
+	//Send an int down the channel to say we are exited
+	results <- 0
 
 }
 
