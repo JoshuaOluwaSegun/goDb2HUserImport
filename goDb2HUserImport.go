@@ -1580,7 +1580,7 @@ func searchSite(siteName string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 	//espXmlmc.SetParam("h_site_name", siteName)
 	espXmlmc.CloseElement("searchFilter")
 	espXmlmc.SetParam("maxResults", "1")
-	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords")
+	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords2")
 
 	var xmlRespon xmlmcSiteListResponse
 	if xmlmcErr != nil {
