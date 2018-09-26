@@ -39,7 +39,7 @@ import (
 //----- Constants -----
 const (
 	letterBytes  = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	version      = "1.2.2"
+	version      = "1.2.3"
 	constOK      = "ok"
 	updateString = "Update"
 	createString = "Create"
@@ -1575,7 +1575,9 @@ func searchSite(siteName string, buffer *bytes.Buffer, espXmlmc *apiLib.XmlmcIns
 	espXmlmc.SetParam("entity", "Site")
 	espXmlmc.SetParam("matchScope", "all")
 	espXmlmc.OpenElement("searchFilter")
-	espXmlmc.SetParam("h_site_name", siteName)
+	espXmlmc.SetParam("column", "h_site_name")
+	espXmlmc.SetParam("value", siteName)
+	//espXmlmc.SetParam("h_site_name", siteName)
 	espXmlmc.CloseElement("searchFilter")
 	espXmlmc.SetParam("maxResults", "1")
 	XMLSiteSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords")
@@ -1659,10 +1661,12 @@ func searchManager(managerName string, buffer *bytes.Buffer, espXmlmc *apiLib.Xm
 	espXmlmc.SetParam("entity", "UserAccount")
 	espXmlmc.SetParam("matchScope", "all")
 	espXmlmc.OpenElement("searchFilter")
-	espXmlmc.SetParam("h_name", managerName)
+	espXmlmc.SetParam("column", "h_name")
+	espXmlmc.SetParam("value", managerName)
+	//espXmlmc.SetParam("h_name", managerName)
 	espXmlmc.CloseElement("searchFilter")
 	espXmlmc.SetParam("maxResults", "1")
-	XMLUserSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords")
+	XMLUserSearch, xmlmcErr := espXmlmc.Invoke("data", "entityBrowseRecords2")
 	var xmlRespon xmlmcUserListResponse
 	if xmlmcErr != nil {
 		buffer.WriteString(loggerGen(4, "Unable to Search for Manager: "+fmt.Sprintf("%v", xmlmcErr)))
