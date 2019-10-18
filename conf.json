@@ -1,113 +1,138 @@
 {
     "APIKey": "",
     "InstanceId": "",
-    "UpdateUserType": false,
-    "UserRoleAction": "Create",
     "SQLConf": {
         "Driver": "mysql",
         "Server": "localhost",
         "Database": "swdata",
         "UserName": "root",
-        "Password": "rootpwd",
+        "Password": "",
         "Port": 5002,
         "UserID": "keysearch",
         "Encrypt": false,
         "Query": "SELECT userdb.*, b.fullname AS manager FROM userdb LEFT JOIN userdb b ON b.keysearch = userdb.fk_manager"
     },
-    "UserMapping":{
-        "userId":"{{.keysearch}}",
-        "UserType":"basic",
-        "Name":"{{.firstname}} {{.surname}}",
-        "Password":"",
-        "FirstName":"{{.firstname}}",
-        "LastName":"{{.surname}}",
-        "JobTitle":"",
-        "Site":"{{.site}}",
-        "Phone":"{{.telext}}",
-        "Email":"{{.email}}",
-        "Mobile":"[mobile]",
-        "AbsenceMessage":"",
-        "TimeZone":"",
-        "Language":"",
-        "DateTimeFormat":"",
-        "DateFormat":"",
-        "TimeFormat":"",
-        "CurrencySymbol":"",
-        "CountryCode":""
-    },
-    "UserAccountStatus":{
-        "Action":"Both",
-        "Enabled": false,
-        "Status":"active"
-    },
-    "UserProfileMapping":{
-        "MiddleName":"",
-        "JobDescription":"",
-        "Manager":"{{.manager}}",
-        "WorkPhone":"",
-        "Qualifications":"",
-        "Interests":"",
-        "Expertise":"",
-        "Gender":"",
-        "Dob":"",
-        "Nationality":"",
-        "Religion":"",
-        "HomeTelephone":"{{.telext}}",
-        "SocialNetworkA":"",
-        "SocialNetworkB":"",
-        "SocialNetworkC":"",
-        "SocialNetworkD":"",
-        "SocialNetworkE":"",
-        "SocialNetworkF":"",
-        "SocialNetworkG":"",
-        "SocialNetworkH":"",
-        "PersonalInterests":"",
-        "homeAddress":"",
-        "PersonalBlog":"",
-        "Attrib1":"1",
-    	"Attrib2":"2",
-    	"Attrib3":"3",
-    	"Attrib4":"4",
-    	"Attrib5":"5",
-    	"Attrib6":"6",
-    	"Attrib7":"7",
-    	"Attrib8":"8"
-    }
-    , "UserManagerMapping":{
-        "Action":"Both"
-        , "Enabled":true
-    }
-    , "Roles":[
-        "Basic User Role"
-    ]
-    , "SiteLookup":{
-        "Action":"Both"
-        , "Enabled": true
-    }
-    , "ImageLink":{
-        "Action":"Both"
-        , "Enabled": true
-        , "UploadType": "URL"
-        , "ImageType": "jpg"
-        , "URI": "http://sample.myservicedesk.com/sw/clisupp/documents/userdb/images/{{.keysearch}}.jpg"
-    }
-    , "OrgLookup":{
-        "Action":"Both"
-        , "Enabled":true
-        , "OrgUnits":[
-            {
-                "Attribute":"{{.department}}",
-                "Type":2,
-                "Membership":"member",
-                "TasksView":false,
-                "TasksAction":false
-            }, {
-                "Attribute":"{{.companyname}}",
-                "Type":5,
-                "Membership":"member",
-                "TasksView":false,
-                "TasksAction":false
-            }
-        ]
+    "User": {
+	"UserDN": "{{.keysearch}}"
+	,"AccountMapping":{
+		"UserID":"{{.keysearch}}",
+		"UserType":"basic",
+		"Name":"{{.firstname}} {{.surname}}",
+		"Password":"",
+		"FirstName":"{{.firstname}}",
+		"LastName":"{{.surname}}",
+		"JobTitle":"",
+		"Site":"{{.site}}",
+		"Phone":"{{.telext}}",
+		"Email":"{{.email}}",
+		"Mobile":"[mobile]",
+		"AbsenceMessage":"",
+		"TimeZone":"",
+		"Language":"",
+		"DateTimeFormat":"",
+		"DateFormat":"",
+		"TimeFormat":"",
+		"CurrencySymbol":"",
+		"CountryCode":""
+	},
+	"Type":{
+		"Action":"Both"
+	},
+	"Status":{
+		"Action":"Both",
+		"Value":"active"
+	},
+	"Role":{
+	    "Action":"Both"
+	    , "Roles":[
+		"Basic User Role"
+	    ]
+	},
+	"ProfileMapping":{
+		"MiddleName":"",
+		"JobDescription":"",
+		"Manager":"{{.manager}}",
+		"WorkPhone":"",
+		"Qualifications":"",
+		"Interests":"",
+		"Expertise":"",
+		"Gender":"",
+		"Dob":"",
+		"Nationality":"",
+		"Religion":"",
+		"HomeTelephone":"{{.telext}}",
+		"SocialNetworkA":"",
+		"SocialNetworkB":"",
+		"SocialNetworkC":"",
+		"SocialNetworkD":"",
+		"SocialNetworkE":"",
+		"SocialNetworkF":"",
+		"SocialNetworkG":"",
+		"SocialNetworkH":"",
+		"PersonalInterests":"",
+		"homeAddress":"",
+		"PersonalBlog":"",
+		"Attrib1":"1",
+		"Attrib2":"2",
+		"Attrib3":"3",
+		"Attrib4":"4",
+		"Attrib5":"5",
+		"Attrib6":"6",
+		"Attrib7":"7",
+		"Attrib8":"8"
+	}
+	, "Manager":{
+		"Action": "Both"
+		, "Value": "{{.manager}}"
+		, "Options": {
+			"GetStringFromValue": {
+				"Regex" : ""
+				, "Reverse": false
+			}
+			, "MatchAgainstDistinguishedName": false
+			, "Search": {
+				"Enable": true
+				, "SearchField": ""
+			}
+		}
+	}
+	, "Image":{
+		"Action":"Both"
+		, "UploadType": "URL"
+		, "InsecureSkipVerify": false
+		, "ImageType": "jpg"
+		, "URI": "http://sample.myservicedesk.com/sw/clisupp/documents/userdb/images/{{.keysearch}}.jpg"
+	}
+	, "Site":{
+		"Action":"Both"
+		, "Value": "{{.site}}"
+	}
+	, "Org":[
+		{
+			"Action":"Both"
+			, "value":"{{.department}}"
+			, "MemberOf":""
+			, "Options": {
+				"Type":2,
+				"Membership":"member",
+				"TasksView":false,
+				"TasksAction":false,
+				"OnlyOneGroupAssignment":false
+			}
+		}
+		, {
+			"Action":"Both"
+			, "value":"{{.companyname}}"
+			, "MemberOf":""
+			, "Options": {
+				"Type":5,
+				"Membership":"member",
+				"TasksView":false,
+				"TasksAction":false,
+				"OnlyOneGroupAssignment":false
+			}
+		}
+
+	]
     }
 }
