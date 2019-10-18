@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-"fmt"
+	"fmt"
 	apiLib "github.com/hornbill/goApiLib"
 )
 
@@ -15,8 +15,6 @@ func writeUserToCache(DN string, ID string) {
 		HornbillCache.DN[DN] = ID
 	}
 }
-
-
 
 // Get User ID From Cache By DN
 func getUserFromDNCache(DN string) string {
@@ -92,16 +90,16 @@ func userCreate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 		hIF.ClearParam()
 		return true, nil
 	}
-var XMLSTRING = hIF.GetParam()
-fmt.Println(XMLSTRING);
+	var XMLSTRING = hIF.GetParam()
+	fmt.Println(XMLSTRING)
 
 	RespBody, xmlmcErr := hIF.Invoke("admin", "userCreate")
 	var JSONResp xmlmcResponse
 	if xmlmcErr != nil {
 		return false, xmlmcErr
 	}
-fmt.Println(RespBody);
-return true, nil
+	fmt.Println(RespBody)
+	return true, nil
 	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
 		return false, err

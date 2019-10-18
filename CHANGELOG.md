@@ -1,3 +1,9 @@
+## 2.0.1 (October 18th, 2019)
+
+Changes:
+
+- Added feature to allow the setting of a Home Organisation when creating/updating users
+
 ## 2.0.0 (October 18th, 2019)
 
 Features:

@@ -6,13 +6,13 @@ import (
 )
 
 //----- Constants -----
-const version = "2.0.0"
+const version = "2.0.1"
 const app_name = "goDb2HUserImport"
 
 var mutexCounters = &sync.Mutex{}
 var bufferMutex = &sync.Mutex{}
 var importHistoryID string
-var maxGoroutines       = 6
+var maxGoroutines = 6
 
 var localDBUsers []map[string]interface{}
 
@@ -47,17 +47,17 @@ type xmlmcSettingResponse struct {
 
 // Flags List
 var Flags struct {
-	configID         string
-	configLogPrefix  string
-	configDryRun     bool
-	configVersion    bool
-	configInstanceID string
-	configAPIKey     string
-	configWorkers    int
-	configAPITimeout int
-	configForceRun   bool
-	configFileName string
-	configZone string
+	configID          string
+	configLogPrefix   string
+	configDryRun      bool
+	configVersion     bool
+	configInstanceID  string
+	configAPIKey      string
+	configWorkers     int
+	configAPITimeout  int
+	configForceRun    bool
+	configFileName    string
+	configZone        string
 	configMaxRoutines string
 }
 
@@ -97,6 +97,7 @@ var HornbillUserStatusMap = map[string]string{
 type userImportJobs struct {
 	create        bool
 	update        bool
+	updateHomeOrg bool
 	updateProfile bool
 	updateType    bool
 	updateSite    bool
@@ -111,7 +112,7 @@ type userWorkingDataStruct struct {
 	Account        AccountMappingStruct
 	Profile        ProfileMappingStruct
 	ImageURI       string
-	DB           *map[string]interface{}
+	DB             *map[string]interface{}
 	Custom         map[string]string
 	Jobs           userImportJobs
 	Roles          []string
@@ -138,6 +139,7 @@ var Time struct {
 //----- Variables -----
 var SQLImportConf SQLImportConfStruct
 var ldapServerAuth ldapServerConfAuthStruct
+
 //var ldapUsers []*ldap.Entry
 var counters struct {
 	errors         uint16
@@ -176,7 +178,6 @@ type ldapServerConfStruct struct {
 	Debug              bool
 }
 
-
 type sqlConfStruct struct {
 	Driver   string
 	Server   string
@@ -192,8 +193,8 @@ type sqlConfStruct struct {
 type SQLImportConfStruct struct {
 	APIKey     string `json:"APIKey"`
 	InstanceID string `json:"InstanceId"`
-	SQLConf            sqlConfStruct
-	User struct {
+	SQLConf    sqlConfStruct
+	User       struct {
 		AccountMapping AccountMappingStruct `json:"AccountMapping"`
 		UserDN         string               `json:"UserDN"`
 		Type           struct {
@@ -244,6 +245,7 @@ type SQLImportConfStruct struct {
 				TasksView              bool   `json:"TasksView"`
 				TasksAction            bool   `json:"TasksAction"`
 				OnlyOneGroupAssignment bool   `json:"OnlyOneGroupAssignment"`
+				SetAsHomeOrganisation  bool   `json:"SetAsHomeOrganisation"`
 			} `json:"Options"`
 		} `json:"Org"`
 	} `json:"User"`
@@ -285,6 +287,7 @@ type AccountMappingStruct struct {
 	TimeFormat     string `json:"TimeFormat"`
 	CurrencySymbol string `json:"CurrencySymbol"`
 	CountryCode    string `json:"CountryCode"`
+	HomeOrg        string `json:"HomeOrg"`
 }
 
 // ProfileMappingStruct Used
@@ -408,6 +411,7 @@ type userAccountStruct struct {
 	HAttrib6             string `json:"h_attrib_6"`
 	HAttrib7             string `json:"h_attrib_7"`
 	HAttrib8             string `json:"h_attrib_8"`
+	HHomeOrg             string `json:"h_home_organization"`
 }
 type xmlmcUserRolesListResponse struct {
 	Params struct {

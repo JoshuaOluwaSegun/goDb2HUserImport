@@ -117,7 +117,8 @@
 				"Membership":"member",
 				"TasksView":false,
 				"TasksAction":false,
-				"OnlyOneGroupAssignment":false
+				"OnlyOneGroupAssignment":false,
+				"SetAsHomeOrganisation":false
 			}
 		}
 		, {
@@ -129,7 +130,8 @@
 				"Membership":"member",
 				"TasksView":false,
 				"TasksAction":false,
-				"OnlyOneGroupAssignment":false
+				"OnlyOneGroupAssignment":false,
+				"SetAsHomeOrganisation":true
 			}
 		}
 

@@ -44,6 +44,7 @@ func getOrgFromLookup(l *userWorkingDataStruct, orgValue string, orgType int) st
 	logger(1, "Unable to Find Organisation "+orgAttributeName, false)
 	return ""
 }
+
 //func isUserAMember(l *ldap.Entry, memberOf string) bool {
 func isUserAMember(l *map[string]interface{}, memberOf string) bool {
 	logger(1, "Checking if user is a memeber of Ad Group: "+memberOf, false)
@@ -144,4 +145,32 @@ func userGroupsRemove(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 	}
 
 	return true, nil
+}
+
+func userGroupSetHomeOrg(hIF *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) error {
+	if currentUser.Account.HomeOrg == "" {
+		err := "No Home Organisation set for User [" + currentUser.Account.UserID + "]"
+		buffer.WriteString(loggerGen(1, err))
+		return errors.New(err)
+	}
+	hIF.SetParam("userId", currentUser.Account.UserID)
+	hIF.SetParam("homeOrganization", currentUser.Account.HomeOrg)
+	XMLSTRING := hIF.GetParam()
+	RespBody, xmlmcErr := hIF.Invoke("admin", "userUpdate")
+	var JSONResp xmlmcResponse
+	if xmlmcErr != nil {
+		buffer.WriteString(loggerGen(1, "User Set Home Org XML "+XMLSTRING))
+		return xmlmcErr
+	}
+	err := json.Unmarshal([]byte(RespBody), &JSONResp)
+	if err != nil {
+		buffer.WriteString(loggerGen(1, "User Set Home Org XML "+XMLSTRING))
+		return err
+	}
+	if JSONResp.State.Error != "" {
+		buffer.WriteString(loggerGen(1, "User Set Home Org XML "+XMLSTRING))
+		return errors.New(JSONResp.State.Error)
+	}
+	buffer.WriteString(loggerGen(1, "Home Organisation ["+currentUser.Account.HomeOrg+"] set for User ["+currentUser.Account.UserID+"]"))
+	return nil
 }

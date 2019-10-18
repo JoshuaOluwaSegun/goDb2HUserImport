@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"strconv"
-		//SQL Package
+	//SQL Package
 	"github.com/hornbill/sqlx"
 	//SQL Drivers
 	_ "github.com/alexbrainman/odbc"
 	_ "github.com/hornbill/go-mssqldb"
 	_ "github.com/hornbill/mysql"
-	_ "github.com/jnewmano/mysql320" 
+	_ "github.com/jnewmano/mysql320"
 )
 
 //buildConnectionString -- Build the connection string for the SQL driver
@@ -77,7 +77,7 @@ func queryDB() bool {
 	if SQLImportConf.SQLConf.Driver == "swsql" {
 		SQLImportConf.SQLConf.Driver = "mysql320"
 	}
-	
+
 	//Clear existing Asset Map down
 	ArrUserMaps := make([]map[string]interface{}, 0)
 	connString := buildConnectionString()
@@ -128,6 +128,3 @@ func queryDB() bool {
 	localDBUsers = ArrUserMaps
 	return true
 }
-
-
-

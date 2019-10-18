@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html"
 	"log"
@@ -12,8 +12,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 	"text/template"
+	"time"
 
 	"github.com/fatih/color"
 	apiLib "github.com/hornbill/goApiLib"
@@ -41,6 +41,7 @@ func processRegexOnString(reg string, input string) string {
 
 	return strReturn
 }
+
 //func getUserFieldValue(u *ldap.Entry, s string, custom map[string]string) string {
 func getUserFieldValue(u *map[string]interface{}, s string, custom map[string]string) string {
 	//-- Dyniamicly Grab Mapped Value
@@ -89,40 +90,40 @@ func processComplexField(u *map[string]interface{}, s string) string {
 	if value == "%!s(<nil>)" {
 		value = ""
 	}
-	
-    return value
 
-/*
-	//-- Match $variables from String
-	re1, err := regexp.Compile(`\[(.*?)\]`)
-	if err != nil {
-		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
-		return ""
-	}
-	//-- Get Array of all Matched max 100
-	result := re1.FindAllString(s, 100)
+	return value
 
-	//-- Loop Matches
-	for _, v := range result {
-		//-- Grab DB Mapping value from result set
-//		var DBAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
-fmt.Println(v)
-		var DBAttributeValue = "aa" //u[GetAttributeValue(v[1 : len(v)-1])
-		//-- Check for Invalid Value
-		if DBAttributeValue == "" {
-			//logger(3, "Unable to Load DB Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
-			return DBAttributeValue
-		}
-		//-- TK UnescapeString to HTML entities are replaced
-		s = html.UnescapeString(strings.Replace(s, v, DBAttributeValue, 1))
+	/*
+	   	//-- Match $variables from String
+	   	re1, err := regexp.Compile(`\[(.*?)\]`)
+	   	if err != nil {
+	   		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
+	   		return ""
+	   	}
+	   	//-- Get Array of all Matched max 100
+	   	result := re1.FindAllString(s, 100)
 
-		//-- TK Remote Any White space leading and trailing a string
-		s = strings.TrimSpace(s)
-	}
+	   	//-- Loop Matches
+	   	for _, v := range result {
+	   		//-- Grab DB Mapping value from result set
+	   //		var DBAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
+	   fmt.Println(v)
+	   		var DBAttributeValue = "aa" //u[GetAttributeValue(v[1 : len(v)-1])
+	   		//-- Check for Invalid Value
+	   		if DBAttributeValue == "" {
+	   			//logger(3, "Unable to Load DB Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
+	   			return DBAttributeValue
+	   		}
+	   		//-- TK UnescapeString to HTML entities are replaced
+	   		s = html.UnescapeString(strings.Replace(s, v, DBAttributeValue, 1))
 
-	//-- Return Value
-	return s
-*/
+	   		//-- TK Remote Any White space leading and trailing a string
+	   		s = strings.TrimSpace(s)
+	   	}
+
+	   	//-- Return Value
+	   	return s
+	*/
 }
 
 //-- Match Any value wrapped in {} and get its Import Action Value
@@ -456,6 +457,7 @@ func getLastHistory() {
 	}
 
 }
+
 /*
 func getInstanceURL() string {
 	xmlmcInstanceConfig.url = "https://"

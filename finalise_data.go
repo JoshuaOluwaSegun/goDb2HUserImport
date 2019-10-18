@@ -45,6 +45,9 @@ func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 		if currentUser.Jobs.updateStatus {
 			updateUserStatus(hIF, currentUser, &buffer)
 		}
+		if currentUser.Jobs.updateHomeOrg {
+			userGroupSetHomeOrg(hIF, currentUser, &buffer)
+		}
 		bar.Increment()
 
 		bufferMutex.Lock()

@@ -7,14 +7,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	//-- CLI Colour
 	"github.com/hornbill/color"
-	
+
 	//-- Hornbill Clone of "github.com/mavricknz/ldap"
 	//--Hornbil Clone of "github.com/cheggaaa/pb"
 
@@ -62,7 +62,7 @@ func main() {
 		logger(4, "Please Check your Configuration: "+Flags.configID, true)
 		return
 	}
-	
+
 	if Flags.configInstanceID == "" {
 		Flags.configInstanceID = SQLImportConf.InstanceID
 	}
@@ -70,7 +70,7 @@ func main() {
 	if Flags.configAPIKey == "" {
 		Flags.configAPIKey = SQLImportConf.APIKey
 	}
-	
+
 	//-- Check import not already running
 	getLastHistory()
 
@@ -90,8 +90,7 @@ func main() {
 
 	//-- Query DB
 	queryDB()
-	
-	
+
 	//-- Process DB User Data First
 	//-- So we only store data about users we have
 	processDBUsers()
@@ -169,10 +168,9 @@ func procFlags() {
 		return
 	}
 
-
 	//-- Output config
 	if !Flags.configVersion {
-		logger(2, "---- XMLMC User Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
+		logger(2, "---- XMLMC DB User Import Utility V"+fmt.Sprintf("%v", version)+" ----", true)
 		logger(2, "Flag - config "+Flags.configID, true)
 		logger(2, "Flag - logprefix "+Flags.configLogPrefix, true)
 		logger(2, "Flag - dryrun "+fmt.Sprintf("%v", Flags.configDryRun), true)
@@ -193,7 +191,7 @@ func outputEnd() {
 		logger(4, "Error Count: "+fmt.Sprintf("%d", counters.errors), true)
 		//logger(4, "Check Log File for Details", true)
 	}
-	logger(2, "Accounts Proccesed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), true)
+	logger(2, "Accounts Procesed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), true)
 	logger(2, "Created: "+fmt.Sprintf("%d", counters.created), true)
 	logger(2, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
 
@@ -234,10 +232,9 @@ func checkVersion() {
 		return
 	}
 	if res.Outdated {
-		logger(3, version+" is not latest, you should upgrade to "+res.Current+" by downloading the latest package Here https://github.com/hornbill/" + app_name + "/releases/tag/v"+res.Current, true)
+		logger(3, version+" is not latest, you should upgrade to "+res.Current+" by downloading the latest package Here https://github.com/hornbill/"+app_name+"/releases/tag/v"+res.Current, true)
 	}
 }
-
 
 func loadConfig() SQLImportConfStruct {
 	//-- Check Config File File Exists
@@ -270,6 +267,7 @@ func loadConfig() SQLImportConfStruct {
 	//-- Return New Congfig
 	return eldapConf
 }
+
 //-- Function to Load Configuration File
 func validateConf() error {
 

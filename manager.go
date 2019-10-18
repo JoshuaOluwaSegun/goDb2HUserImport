@@ -19,7 +19,7 @@ func getManager(importData *userWorkingDataStruct, currentData userAccountStruct
 	//-- Get Value of Attribute
 	ManagerAttributeName := processComplexField(importData.DB, SQLImportConf.User.Manager.Value)
 	ManagerAttributeName = processImportAction(importData.Custom, ManagerAttributeName)
-	
+
 	if SQLImportConf.User.Manager.Options.MatchAgainstDistinguishedName {
 		logger(1, "Searching Distinguished Name Cache for: "+ManagerAttributeName, false)
 		managerID := getUserFromDNCache(ManagerAttributeName)
@@ -29,7 +29,7 @@ func getManager(importData *userWorkingDataStruct, currentData userAccountStruct
 		}
 		logger(1, "Unable to find Manager in Distinguished Name  Cache Coninuing search", false)
 	}
-	
+
 	//-- Dont Continue if we didn't get anything
 	if ManagerAttributeName == "" {
 		return ""
