@@ -32,32 +32,6 @@ func processDBUsers() {
 	logger(1, "DB Users Processed: "+fmt.Sprintf("%d", len(localDBUsers))+"\n", true)
 }
 
-/*
-func processDBUsers() {
-	logger(1, "Processing DB User Data", true)
-
-	//-- User Working Data
-	HornbillCache.UsersWorking = make(map[string]*userWorkingDataStruct)
-	HornbillCache.Managers = make(map[string]string)
-	HornbillCache.DN = make(map[string]string)
-	HornbillCache.Images = make(map[string]imageStruct)
-	//-- Loop DB Users
-	for user := range ldapUsers {
-		// Process Pre Import Actions
-		var userID = processImportActions(ldapUsers[user])
-		// Process Params and return userId
-		processUserParams(ldapUsers[user], userID)
-		if userID != "" {
-			var userDN = processComplexField(ldapUsers[user], SQLImportConf.User.UserDN)
-			//-- Write to Cache
-			writeUserToCache(userDN, userID)
-		}
-	}
-
-	logger(1, "DB Users Processed: "+fmt.Sprintf("%d", len(ldapUsers))+"\n", true)
-}
-*/
-
 func processData() {
 	logger(1, "Processing User Data", true)
 
@@ -397,6 +371,10 @@ func checkUserNeedsSiteUpdate(importData *userWorkingDataStruct, currentData use
 	return false
 }
 func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
+	if importData.Account.LoginID != "" && importData.Account.LoginID != currentData.HLoginID {
+		logger(1, "Name: "+importData.Account.LoginID+" - "+currentData.HLoginID, true)
+		return true
+	}
 	if importData.Account.Name != "" && importData.Account.Name != currentData.HName {
 		logger(1, "Name: "+importData.Account.Name+" - "+currentData.HName, true)
 		return true
@@ -679,7 +657,7 @@ func processImportActions(l *map[string]interface{}) string {
 func processUserParams(l *map[string]interface{}, userID string) {
 
 	data := HornbillCache.UsersWorking[userID]
-
+	data.Account.LoginID = getUserFieldValue(l, "LoginID", data.Custom)
 	data.Account.UserType = getUserFieldValue(l, "UserType", data.Custom)
 	data.Account.Name = getUserFieldValue(l, "Name", data.Custom)
 	data.Account.Password = getUserFieldValue(l, "Password", data.Custom)

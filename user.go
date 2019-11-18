@@ -29,6 +29,9 @@ func userCreate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 	buffer.WriteString(loggerGen(1, "User Create: "+user.Account.UserID))
 	//-- Set Params based on already processed params
 	hIF.SetParam("userId", user.Account.UserID)
+	if user.Account.LoginID != "" && serverBuild >= loginIDMinServerBuild {
+		hIF.SetParam("loginId", user.Account.LoginID)
+	}
 	hIF.SetParam("name", user.Account.Name)
 	//-- Password is base64 encoded already in process_data
 	hIF.SetParam("password", user.Account.Password)
@@ -98,8 +101,8 @@ func userCreate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 	if xmlmcErr != nil {
 		return false, xmlmcErr
 	}
-	fmt.Println(RespBody)
-	return true, nil
+	//fmt.Println(RespBody)
+	//return true, nil
 	err := json.Unmarshal([]byte(RespBody), &JSONResp)
 	if err != nil {
 		return false, err
@@ -116,6 +119,9 @@ func userUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 	buffer.WriteString(loggerGen(1, "User Update: "+user.Account.UserID))
 	//-- Set Params based on already processed params
 	hIF.SetParam("userId", user.Account.UserID)
+	if user.Account.LoginID != "" && serverBuild >= loginIDMinServerBuild {
+		hIF.SetParam("loginId", user.Account.LoginID)
+	}
 	hIF.SetParam("userType", user.Account.UserType)
 	hIF.SetParam("name", user.Account.Name)
 	//hIF.SetParam("password", user.Password)

@@ -6,20 +6,23 @@ import (
 )
 
 //----- Constants -----
-const version = "2.0.1"
-const app_name = "goDb2HUserImport"
+const version = "2.1.0"
+const appName = "goDb2HUserImport"
 
-var mutexCounters = &sync.Mutex{}
-var bufferMutex = &sync.Mutex{}
-var importHistoryID string
-var maxGoroutines = 6
+var (
+	mutexCounters         = &sync.Mutex{}
+	bufferMutex           = &sync.Mutex{}
+	importHistoryID       string
+	maxGoroutines         = 6
+	serverBuild           int
+	loginIDMinServerBuild = 3195
+	localDBUsers          []map[string]interface{}
 
-var localDBUsers []map[string]interface{}
-
-//Password profiles
-var passwordProfile passwordProfileStruct
-var blacklistURLs = [...]string{"https://files.hornbill.com/hornbillStatic/password_blacklists/SplashData.txt", "https://files.hornbill.com/hornbillStatic/password_blacklists/Imperva.txt"}
-var defaultPasswordLength = 10
+	//Password profiles
+	passwordProfile       passwordProfileStruct
+	blacklistURLs         = [...]string{"https://files.hornbill.com/hornbillStatic/password_blacklists/SplashData.txt", "https://files.hornbill.com/hornbillStatic/password_blacklists/Imperva.txt"}
+	defaultPasswordLength = 10
+)
 
 type passwordProfileStruct struct {
 	Length              int
@@ -136,8 +139,8 @@ var Time struct {
 	endTime   time.Duration
 }
 
-//----- Variables -----
-var SQLImportConf SQLImportConfStruct
+//SQLImportConf holds the import config
+var SQLImportConf sqlImportConfStruct
 var ldapServerAuth ldapServerConfAuthStruct
 
 //var ldapUsers []*ldap.Entry
@@ -190,7 +193,7 @@ type sqlConfStruct struct {
 	UserID   string
 }
 
-type SQLImportConfStruct struct {
+type sqlImportConfStruct struct {
 	APIKey     string `json:"APIKey"`
 	InstanceID string `json:"InstanceId"`
 	SQLConf    sqlConfStruct
@@ -269,6 +272,7 @@ type SQLImportConfStruct struct {
 // AccountMappingStruct Used
 type AccountMappingStruct struct {
 	UserID         string `json:"UserID"`
+	LoginID        string `json:"LoginId"`
 	UserType       string `json:"UserType"`
 	Name           string `json:"Name"`
 	Password       string `json:"Password"`
@@ -356,6 +360,7 @@ type groupStruct struct {
 }
 type userAccountStruct struct {
 	HUserID              string `json:"h_user_id"`
+	HLoginID             string `json:"h_login_id"`
 	HName                string `json:"h_name"`
 	HFirstName           string `json:"h_first_name"`
 	HMiddleName          string `json:"h_middle_name"`
@@ -496,4 +501,12 @@ type stateJSONStruct struct {
 type xmlmcResponse struct {
 	MethodResult string          `json:"status,attr"`
 	State        stateJSONStruct `json:"state"`
+}
+
+type xmlmcLicenseInfo struct {
+	MethodResult string `json:"status,attr"`
+	Params       struct {
+		ServerBuild int
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }

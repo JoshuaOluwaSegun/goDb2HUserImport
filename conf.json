@@ -16,6 +16,7 @@
 	"UserDN": "{{.keysearch}}"
 	,"AccountMapping":{
 		"UserID":"{{.keysearch}}",
+		"LoginID":"{{.keysearch}}",
 		"UserType":"basic",
 		"Name":"{{.firstname}} {{.surname}}",
 		"Password":"",

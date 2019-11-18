@@ -9,7 +9,7 @@ import (
 	_ "github.com/alexbrainman/odbc"
 	_ "github.com/hornbill/go-mssqldb"
 	_ "github.com/hornbill/mysql"
-	_ "github.com/jnewmano/mysql320"
+	_ "github.com/hornbill/mysql320"
 )
 
 //buildConnectionString -- Build the connection string for the SQL driver

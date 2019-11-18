@@ -63,17 +63,19 @@ func main() {
 		return
 	}
 
+	
 	if Flags.configInstanceID == "" {
 		Flags.configInstanceID = SQLImportConf.InstanceID
 	}
-
+	
 	if Flags.configAPIKey == "" {
 		Flags.configAPIKey = SQLImportConf.APIKey
 	}
-
+	
+	getServerBuild()
 	//-- Check import not already running
 	getLastHistory()
-
+	
 	//-- Start Import
 	logged := startImportHistory()
 	//-- Check for Connections
@@ -147,7 +149,7 @@ func procFlags() {
 
 	//-- Parse Flags
 	flag.Parse()
-	Flags.configID = app_name
+	Flags.configID = appName
 	//-- Output config
 	if !Flags.configVersion {
 		outputFlags()
@@ -223,7 +225,7 @@ func outputEnd() {
 func checkVersion() {
 	githubTag := &latest.GithubTag{
 		Owner:      "hornbill",
-		Repository: app_name,
+		Repository: appName,
 	}
 
 	res, err := latest.Check(githubTag, version)
@@ -232,11 +234,11 @@ func checkVersion() {
 		return
 	}
 	if res.Outdated {
-		logger(3, version+" is not latest, you should upgrade to "+res.Current+" by downloading the latest package Here https://github.com/hornbill/"+app_name+"/releases/tag/v"+res.Current, true)
+		logger(3, version+" is not latest, you should upgrade to "+res.Current+" by downloading the latest package Here https://github.com/hornbill/"+appName+"/releases/tag/v"+res.Current, true)
 	}
 }
 
-func loadConfig() SQLImportConfStruct {
+func loadConfig() sqlImportConfStruct {
 	//-- Check Config File File Exists
 	cwd, _ := os.Getwd()
 	configurationFilePath := cwd + "/" + Flags.configFileName
@@ -255,7 +257,7 @@ func loadConfig() SQLImportConfStruct {
 	//-- New Decoder
 	decoder := json.NewDecoder(file)
 
-	eldapConf := SQLImportConfStruct{}
+	eldapConf := sqlImportConfStruct{}
 
 	//-- Decode JSON
 	err := decoder.Decode(&eldapConf)
