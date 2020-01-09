@@ -17,6 +17,7 @@
 	,"AccountMapping":{
 		"UserID":"{{.keysearch}}",
 		"LoginID":"{{.keysearch}}",
+		"EmployeeID":"{{.keysearch}}",
 		"UserType":"basic",
 		"Name":"{{.firstname}} {{.surname}}",
 		"Password":"",

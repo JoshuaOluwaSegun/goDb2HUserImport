@@ -6,17 +6,17 @@ import (
 )
 
 //----- Constants -----
-const version = "2.1.0"
+const version = "2.2.0"
 const appName = "goDb2HUserImport"
 
 var (
-	mutexCounters         = &sync.Mutex{}
-	bufferMutex           = &sync.Mutex{}
-	importHistoryID       string
-	maxGoroutines         = 6
-	serverBuild           int
-	loginIDMinServerBuild = 3195
-	localDBUsers          []map[string]interface{}
+	mutexCounters            = &sync.Mutex{}
+	bufferMutex              = &sync.Mutex{}
+	importHistoryID          string
+	maxGoroutines            = 6
+	serverBuild              int
+	employeeIDMinServerBuild = 3241
+	localDBUsers             []map[string]interface{}
 
 	//Password profiles
 	passwordProfile       passwordProfileStruct
@@ -273,6 +273,7 @@ type sqlImportConfStruct struct {
 type AccountMappingStruct struct {
 	UserID         string `json:"UserID"`
 	LoginID        string `json:"LoginId"`
+	EmployeeID     string `json:"EmployeeId"`
 	UserType       string `json:"UserType"`
 	Name           string `json:"Name"`
 	Password       string `json:"Password"`
@@ -361,6 +362,7 @@ type groupStruct struct {
 type userAccountStruct struct {
 	HUserID              string `json:"h_user_id"`
 	HLoginID             string `json:"h_login_id"`
+	HEmployeeID          string `json:"h_employee_id"`
 	HName                string `json:"h_name"`
 	HFirstName           string `json:"h_first_name"`
 	HMiddleName          string `json:"h_middle_name"`

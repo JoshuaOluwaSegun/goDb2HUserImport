@@ -19,14 +19,6 @@ rm -rf "release/"
 mkdir release
 
 printf "Replace Version Variable\n"
-cp README.SOURCE.md README.md
-#Replace Version in ReadMe
-
-sed -i.bak 's/{version}/'${version}'/g' README.md
-sed -i.bak 's/{versiond}/'${versiond}'/g' README.md
-
-# Remove Backup Readme
-rm README.md.bak
 
 printf "\n"
 for platform in ${platforms}
