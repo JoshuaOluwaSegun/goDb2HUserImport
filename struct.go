@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.2.0"
+const version = "2.2.1"
 const appName = "goDb2HUserImport"
 
 var (
