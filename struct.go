@@ -6,8 +6,9 @@ import (
 )
 
 //----- Constants -----
-const version = "2.2.1"
+const version = "2.2.2"
 const appName = "goDb2HUserImport"
+const applicationName = "DB User Import Utility"
 
 var (
 	mutexCounters            = &sync.Mutex{}

@@ -1,6 +1,12 @@
 # CHANGELOG
 
-## 2.2.1 (April 15th, 2020)
+## 2.2.2 (June 12th, 2020)
+
+Changes:
+
+- minor changes to be compatible with new crosscompile script
+
+## 2.2.1 (April 15th, 2020)
 
 Change:
 
