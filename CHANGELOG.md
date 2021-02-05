@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.2.3 (December 4th, 2020)
+
+Changes:
+
+- ability to import on employee or logon ID instead
+
 ## 2.2.2 (June 12th, 2020)
 
 Changes:

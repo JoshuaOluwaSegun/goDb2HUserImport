@@ -52,6 +52,7 @@ func main() {
 
 	//-- Load Configuration File Into Struct
 	SQLImportConf = loadConfig()
+	
 
 	//-- Validation on Configuration File
 	configError := validateConf()
@@ -89,6 +90,10 @@ func main() {
 
 	//-- Get Password Profile
 	getPasswordProfile()
+
+
+	SQLImportConf.User.HornbillUserIDColumn = strings.ToLower(SQLImportConf.User.HornbillUserIDColumn)
+
 
 	//-- Query DB
 	queryDB()

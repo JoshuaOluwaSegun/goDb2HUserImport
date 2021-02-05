@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.2.2"
+const version = "2.2.3"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -201,6 +201,7 @@ type sqlImportConfStruct struct {
 	User       struct {
 		AccountMapping AccountMappingStruct `json:"AccountMapping"`
 		UserDN         string               `json:"UserDN"`
+		HornbillUserIDColumn         string               `json:"HornbillUniqueColumn"`
 		Type           struct {
 			Action string `json:"Action"`
 		} `json:"Type"`

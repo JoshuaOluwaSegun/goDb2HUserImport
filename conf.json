@@ -13,7 +13,8 @@
         "Query": "SELECT userdb.*, b.fullname AS manager FROM userdb LEFT JOIN userdb b ON b.keysearch = userdb.fk_manager"
     },
     "User": {
-	"UserDN": "{{.keysearch}}"
+	"UserDN": "{{.keysearch}}",
+	"HornbillUniqueColumn": "h_user_id",
 	,"AccountMapping":{
 		"UserID":"{{.keysearch}}",
 		"LoginID":"{{.keysearch}}",

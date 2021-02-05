@@ -51,8 +51,23 @@ func processData() {
 			logger(4, "DB Record Has no User ID: '"+fmt.Sprintf("%+v", currentUser.DB)+"'\n", false)
 			continue
 		}
+		var checkUserID = false
+		switch SQLImportConf.User.HornbillUserIDColumn {
+			case 'h_employee_id': {
+				checkUserID = (strings.ToLower(hornbillUserData.HEmployeeID) == userID)
+			}
+			case 'h_login_id': {
+				checkUserID = (strings.ToLower(hornbillUserData.HLoginID) == userID)
+			}
+			case 'h_user_id': { // as Go Switch doesn't fall through
+				checkUserID = (strings.ToLower(hornbillUserData.HUserID) == userID)
+			}
+			default: {
+				checkUserID = (strings.ToLower(hornbillUserData.HUserID) == userID)
+			}
+		}
 		//-- Check Map no need to loop
-		if strings.ToLower(hornbillUserData.HUserID) == userID {
+		if checkUserID {
 
 			currentUser.Jobs.update = checkUserNeedsUpdate(currentUser, hornbillUserData)
 
