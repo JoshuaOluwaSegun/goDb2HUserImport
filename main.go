@@ -52,7 +52,6 @@ func main() {
 
 	//-- Load Configuration File Into Struct
 	SQLImportConf = loadConfig()
-	
 
 	//-- Validation on Configuration File
 	configError := validateConf()
@@ -198,7 +197,7 @@ func outputEnd() {
 		logger(4, "Error Count: "+fmt.Sprintf("%d", counters.errors), true)
 		//logger(4, "Check Log File for Details", true)
 	}
-	logger(2, "Accounts Procesed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), true)
+	logger(2, "Accounts Processed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking)), true)
 	logger(2, "Created: "+fmt.Sprintf("%d", counters.created), true)
 	logger(2, "Updated: "+fmt.Sprintf("%d", counters.updated), true)
 
@@ -290,6 +289,9 @@ func validateConf() error {
 	}
 
 	//-- Process Config File
+	if SQLImportConf.Action == "" {
+		SQLImportConf.Action = "Both"
+	}
 
 	return nil
 }

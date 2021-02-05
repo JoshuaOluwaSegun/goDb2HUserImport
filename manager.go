@@ -86,8 +86,73 @@ func searchManager(managerName string) (bool, string) {
 	logger(1, "Manager Search: "+strSearchField+" - "+managerName, false)
 
 	//-- Check User Cache for Manager
+	strFieldToMatch := "";
 	for _, v := range HornbillCache.Users {
-		if strings.EqualFold(v.HName, managerName) {
+		switch c := strSearchField; c {
+			case "h_user_id": strFieldToMatch = v.HUserID
+			case "h_login_id": strFieldToMatch = v.HLoginID
+			case "h_employee_id": strFieldToMatch = v.HEmployeeID
+			case "h_name": strFieldToMatch = v.HName
+			case "h_email": strFieldToMatch = v.HEmail
+			case "h_attrib_1": strFieldToMatch = v.HAttrib1
+			case "h_attrib_2": strFieldToMatch = v.HAttrib2
+			case "h_attrib_3": strFieldToMatch = v.HAttrib3
+			case "h_sn_a": strFieldToMatch = v.HSnA
+			case "h_sn_b": strFieldToMatch = v.HSnB
+			case "h_sn_c": strFieldToMatch = v.HSnC
+			case "h_site": strFieldToMatch = v.HSite
+			case "h_home_organization": strFieldToMatch = v.HHomeOrg
+			case "h_attrib_4": strFieldToMatch = v.HAttrib4
+			case "h_attrib_5": strFieldToMatch = v.HAttrib5
+			case "h_attrib_6": strFieldToMatch = v.HAttrib6
+			case "h_attrib_7": strFieldToMatch = v.HAttrib7
+			case "h_attrib_8": strFieldToMatch = v.HAttrib8
+			case "h_sn_d": strFieldToMatch = v.HSnD
+			case "h_sn_e": strFieldToMatch = v.HSnE
+			case "h_sn_f": strFieldToMatch = v.HSnF
+			case "h_sn_g": strFieldToMatch = v.HSnG
+			case "h_sn_h": strFieldToMatch = v.HSnH
+
+/* there should be no reason to match on any of those below
+			case "h_mobile": strFieldToMatch = v.HMobile
+			case "h_first_name": strFieldToMatch = v.HFirstName
+			case "h_middle_name": strFieldToMatch = v.HMiddleName
+			case "h_last_name": strFieldToMatch = v.HLastName
+			case "h_phone": strFieldToMatch = v.HPhone
+			case "h_job_title": strFieldToMatch = v.HJobTitle
+			case "h_login_creds": strFieldToMatch = v.HLoginCreds
+			case "h_class": strFieldToMatch = v.HClass
+			case "h_avail_status": strFieldToMatch = v.HAvailStatus
+			case "h_avail_status_msg": strFieldToMatch = v.HAvailStatusMsg
+			case "h_timezone": strFieldToMatch = v.HTimezone
+			case "h_country": strFieldToMatch = v.HCountry
+			case "h_language": strFieldToMatch = v.HLanguage
+			case "h_date_time_format": strFieldToMatch = v.HDateTimeFormat
+			case "h_date_format": strFieldToMatch = v.HDateFormat
+			case "h_time_format": strFieldToMatch = v.HTimeFormat
+			case "h_currency_symbol": strFieldToMatch = v.HCurrencySymbol
+			case "h_last_logon": strFieldToMatch = v.HLastLogon
+			case "h_icon_ref": strFieldToMatch = v.HIconRef
+			case "h_icon_checksum": strFieldToMatch = v.HIconChecksum
+			case "h_dob": strFieldToMatch = v.HDob
+			case "h_account_status": strFieldToMatch = v.HAccountStatus
+			case "h_failed_attempts": strFieldToMatch = v.HFailedAttempts
+			case "h_idx_ref": strFieldToMatch = v.HIdxRef
+			case "h_manager": strFieldToMatch = v.HManager
+			case "h_summary": strFieldToMatch = v.HSummary
+			case "h_interests": strFieldToMatch = v.HInterests
+			case "h_qualifications": strFieldToMatch = v.HQualifications
+			case "h_personal_interests": strFieldToMatch = v.HPersonalInterests
+			case "h_skills": strFieldToMatch = v.HSkills
+			case "h_gender": strFieldToMatch = v.HGender
+			case "h_nationality": strFieldToMatch = v.HNationality
+			case "h_religion": strFieldToMatch = v.HReligion
+			case "h_home_telephone_number": strFieldToMatch = v.HHomeTelephoneNumber
+			case "h_home_address": strFieldToMatch = v.HHomeAddress
+			case "h_blog": strFieldToMatch = v.HBlog
+*/
+		}
+		if strings.EqualFold(strFieldToMatch, managerName) {
 			//-- If not already in cache push to cache
 			_, found := HornbillCache.Managers[strings.ToLower(managerName)]
 			if !found {

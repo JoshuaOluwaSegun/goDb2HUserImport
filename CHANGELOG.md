@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2.2.4 (February 5th, 2020)
+
+Changes:
+
+- ability to import configure to only Create or Update
+
+Fixes:
+
+- fix to manager search which had search on manager name hard-coded instead of picking up the configured field (from Manager.Options.Search.SearchField).
+
 ## 2.2.3 (December 4th, 2020)
 
 Changes:

@@ -12,6 +12,7 @@
         "Encrypt": false,
         "Query": "SELECT userdb.*, b.fullname AS manager FROM userdb LEFT JOIN userdb b ON b.keysearch = userdb.fk_manager"
     },
+    "Action": "Both",
     "User": {
 	"UserDN": "{{.keysearch}}",
 	"HornbillUniqueColumn": "h_user_id",
