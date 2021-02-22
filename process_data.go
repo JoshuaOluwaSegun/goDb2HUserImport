@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -34,41 +35,53 @@ func processDBUsers() {
 
 func processData() {
 	logger(1, "Processing User Data", true)
-
+	boolSkip := false
 	for user := range HornbillCache.UsersWorking {
+
+		boolSkip = false
 
 		currentUser := HornbillCache.UsersWorking[user]
 		//-- Current UserID
-		userID := strings.ToLower(currentUser.Account.UserID)
+		userID := strings.ToLower(currentUser.Account.UniqueID)
 
 		//-- Extra Debugging
 		logger(1, "DB User ID: '"+userID+"'\n", false)
-
-		hornbillUserData := HornbillCache.Users[userID]
 
 		if userID == "" {
 			CounterInc(7)
 			logger(4, "DB Record Has no User ID: '"+fmt.Sprintf("%+v", currentUser.DB)+"'\n", false)
 			continue
 		}
+
+		hornbillUserData := HornbillCache.Users[userID]
+
 		var checkUserID = false
 		switch SQLImportConf.User.HornbillUserIDColumn {
-			case 'h_employee_id': {
+		case "h_employee_id":
+			{
 				checkUserID = (strings.ToLower(hornbillUserData.HEmployeeID) == userID)
 			}
-			case 'h_login_id': {
+		case "h_login_id":
+			{
 				checkUserID = (strings.ToLower(hornbillUserData.HLoginID) == userID)
 			}
-			case 'h_user_id': { // as Go Switch doesn't fall through
+		case "h_email":
+			{
+				checkUserID = (strings.ToLower(hornbillUserData.HEmail) == userID)
+			}
+		case "h_user_id":
+			{ // as Go Switch doesn't fall through
 				checkUserID = (strings.ToLower(hornbillUserData.HUserID) == userID)
 			}
-			default: {
+		default:
+			{
 				checkUserID = (strings.ToLower(hornbillUserData.HUserID) == userID)
 			}
 		}
 		//-- Check Map no need to loop
-		if checkUserID {
+		currentUser.Jobs.id = hornbillUserData.HUserID
 
+		if checkUserID && SQLImportConf.Action != "Create" {
 			currentUser.Jobs.update = checkUserNeedsUpdate(currentUser, hornbillUserData)
 
 			currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)
@@ -88,7 +101,11 @@ func processData() {
 			checkUserNeedsRoleUpdate(currentUser, hornbillUserData)
 
 			currentUser.Jobs.updateStatus = checkUserNeedsStatusUpdate(currentUser, hornbillUserData)
-		} else {
+
+		} else if SQLImportConf.Action != "Update" {
+
+			//entry does not exist in Hornbill, so creation - requires User ID from DB (and not from Hornbill)
+			currentUser.Jobs.id = currentUser.Account.UserID
 			//-- Check for Password
 			setUserPasswordValueForCreate(currentUser)
 			//-- Set Site ID Based on Config
@@ -98,23 +115,41 @@ func processData() {
 			checkUserNeedsOrgCreate(currentUser, hornbillUserData)
 			currentUser.Jobs.updateStatus = checkUserNeedsStatusCreate(currentUser, hornbillUserData)
 			currentUser.Jobs.create = true
+			currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)
+			///########
+
+		} else {
+			currentUser.Jobs.update = false
+			currentUser.Jobs.updateProfile = false
+			currentUser.Jobs.updateType = false
+			currentUser.Jobs.updateSite = false
+			currentUser.Jobs.updateImage = false
+			currentUser.Jobs.updateHomeOrg = false
+			currentUser.Jobs.create = false
+			currentUser.Jobs.updateStatus = false
+			currentUser.Jobs.updateHomeOrg = false
+			boolSkip = true
 		}
 
-		loggerOutput := []string{
-			"User: " + userID,
-			"Create: " + strconv.FormatBool(currentUser.Jobs.create),
-			"Update: " + strconv.FormatBool(currentUser.Jobs.update),
-			"Update Type: " + strconv.FormatBool(currentUser.Jobs.updateType),
-			"Update Profile: " + strconv.FormatBool(currentUser.Jobs.updateProfile),
-			"Update Site: " + strconv.FormatBool(currentUser.Jobs.updateSite),
-			"Update Status: " + strconv.FormatBool(currentUser.Jobs.updateStatus),
-			"Update Home Organisation: " + strconv.FormatBool(currentUser.Jobs.updateHomeOrg),
-			"Roles Count: " + fmt.Sprintf("%d", len(currentUser.Roles)),
-			"Update Image: " + strconv.FormatBool(currentUser.Jobs.updateImage),
-			"Groups: " + fmt.Sprintf("%d", len(currentUser.Groups))}
+		if boolSkip {
+			logger(1, userID+" will be skipped because of Action: "+SQLImportConf.Action+"\n", false)
+		} else {
+			loggerOutput := []string{
+				"User: " + userID,
+				"Create: " + strconv.FormatBool(currentUser.Jobs.create),
+				"Update: " + strconv.FormatBool(currentUser.Jobs.update),
+				"Update Type: " + strconv.FormatBool(currentUser.Jobs.updateType),
+				"Update Profile: " + strconv.FormatBool(currentUser.Jobs.updateProfile),
+				"Update Site: " + strconv.FormatBool(currentUser.Jobs.updateSite),
+				"Update Status: " + strconv.FormatBool(currentUser.Jobs.updateStatus),
+				"Update Home Organisation: " + strconv.FormatBool(currentUser.Jobs.updateHomeOrg),
+				"Roles Count: " + fmt.Sprintf("%d", len(currentUser.Roles)),
+				"Update Image: " + strconv.FormatBool(currentUser.Jobs.updateImage),
+				"Groups: " + fmt.Sprintf("%d", len(currentUser.Groups))}
 
-		strings.Join(loggerOutput[:], "\n\t")
-		logger(1, strings.Join(loggerOutput[:], "\n\t")+"\n", false)
+			strings.Join(loggerOutput[:], "\n\t")
+			logger(1, strings.Join(loggerOutput[:], "\n\t")+"\n", false)
+		}
 	}
 	logger(1, "User Data Processed: "+fmt.Sprintf("%d", len(HornbillCache.UsersWorking))+"", true)
 }
@@ -466,6 +501,12 @@ func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAcc
 }
 func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
 
+	if SQLImportConf.User.Manager.Action == "Both" || SQLImportConf.User.Manager.Action == "Update" {
+		importData.Profile.Manager = getManager(importData, currentData)
+	} else {
+		//-- Use Current Value
+		importData.Profile.Manager = currentData.HManager
+	}
 	if importData.Profile.MiddleName != "" && importData.Profile.MiddleName != currentData.HMiddleName {
 		logger(1, "MiddleName: "+importData.Profile.MiddleName+" - "+currentData.HMiddleName, true)
 		return true
@@ -474,12 +515,6 @@ func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData 
 	if importData.Profile.JobDescription != "" && importData.Profile.JobDescription != currentData.HSummary {
 		logger(1, "JobDescription: "+importData.Profile.JobDescription+" - "+currentData.HSummary, true)
 		return true
-	}
-	if SQLImportConf.User.Manager.Action == "Both" || SQLImportConf.User.Manager.Action == "Update" {
-		importData.Profile.Manager = getManager(importData, currentData)
-	} else {
-		//-- Use Current Value
-		importData.Profile.Manager = currentData.HManager
 	}
 	if importData.Profile.Manager != "" && importData.Profile.Manager != currentData.HManager {
 		logger(1, "Manager: "+importData.Profile.Manager+" - "+currentData.HManager, true)
@@ -610,8 +645,37 @@ func processImportActions(l *map[string]interface{}) string {
 	//-- init map
 	data.Custom = make(map[string]string)
 	data.Account.UserID = getUserFieldValue(l, "UserID", data.Custom)
+	data.Account.UniqueID = getUserFieldValue(l, "UserID", data.Custom)
+	switch SQLImportConf.User.HornbillUserIDColumn {
+	case "h_employee_id":
+		{
+			data.Account.UniqueID = getUserFieldValue(l, "EmployeeID", data.Custom)
+			//data.Account.UserID = getUserFieldValue(l, "EmployeeID", data.Custom)
+		}
+	case "h_login_id":
+		{
+			data.Account.UniqueID = getUserFieldValue(l, "LoginID", data.Custom)
+			//data.Account.UserID = getUserFieldValue(l, "LoginID", data.Custom)
+		}
+	case "h_email":
+		{
+			data.Account.UniqueID = getUserFieldValue(l, "Email", data.Custom)
+			//data.Account.UserID = getUserFieldValue(l, "LoginID", data.Custom)
+		}
+		/* no real need to do anything - yet
+		case "h_user_id": { // as Go Switch doesn't fall through
+			//data.Account.UserID = getUserFieldValue(l, "UserID", data.Custom)
+		}
+		default: {
+			//data.Account.UserID = getUserFieldValue(l, "UserID", data.Custom)
+		}*/
+	}
+	if data.Account.UniqueID == "" {
+		logger(1, "No Unique Identifier set for this record  "+fmt.Sprintf("%v", l), true)
+		os.Exit(1)
+	}
+	logger(1, "Process Data for:  "+data.Account.UniqueID, false)
 
-	logger(1, "Post Import Actions for: "+data.Account.UserID, false)
 	//-- Loop Matches
 	for _, action := range SQLImportConf.Actions {
 		switch action.Action {
@@ -666,7 +730,7 @@ func processImportActions(l *map[string]interface{}) string {
 		}
 	}
 	//-- Store Result in map of userid
-	var userID = strings.ToLower(data.Account.UserID)
+	var userID = strings.ToLower(data.Account.UniqueID)
 	HornbillCache.UsersWorking[userID] = data
 	return userID
 }
@@ -676,6 +740,7 @@ func processImportActions(l *map[string]interface{}) string {
 func processUserParams(l *map[string]interface{}, userID string) {
 
 	data := HornbillCache.UsersWorking[userID]
+	data.Account.UserID = getUserFieldValue(l, "UserID", data.Custom)
 	data.Account.LoginID = getUserFieldValue(l, "LoginID", data.Custom)
 	data.Account.EmployeeID = getUserFieldValue(l, "EmployeeID", data.Custom)
 	data.Account.UserType = getUserFieldValue(l, "UserType", data.Custom)

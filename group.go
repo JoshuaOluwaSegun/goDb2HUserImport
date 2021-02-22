@@ -47,13 +47,13 @@ func getOrgFromLookup(l *userWorkingDataStruct, orgValue string, orgType int) st
 
 //func isUserAMember(l *ldap.Entry, memberOf string) bool {
 func isUserAMember(l *map[string]interface{}, memberOf string) bool {
-	logger(1, "Checking if user is a memeber of Ad Group: "+memberOf, false)
+	logger(1, "Checking if user is a member of AD Group: "+memberOf, false)
 
 	//-- Load DB memberof
 	var userAdGroups []string
 	//userAdGroups := l.GetAttributeValues("memberof")
 	if len(userAdGroups) == 0 {
-		logger(1, "User is not a Member of any Ad Groups ", false)
+		logger(1, "User is not a Member of any AD Groups ", false)
 		return false
 	}
 
@@ -61,12 +61,12 @@ func isUserAMember(l *map[string]interface{}, memberOf string) bool {
 	for index := range userAdGroups {
 		logger(1, "Checking Ad Group: "+userAdGroups[index], false)
 		if userAdGroups[index] == memberOf {
-			logger(1, "User is a Member of Ad Group: "+memberOf, false)
+			logger(1, "User is a Member of AD Group: "+memberOf, false)
 			return true
 		}
 	}
 
-	logger(1, "User is not a Member of Ad Group: "+memberOf, false)
+	logger(1, "User is not a Member of AD Group: "+memberOf, false)
 	return false
 }
 
@@ -74,9 +74,10 @@ func userGroupsUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 
 	for groupIndex := range user.Groups {
 		group := user.Groups[groupIndex]
-		buffer.WriteString(loggerGen(1, "Group Add User: "+user.Account.UserID+" Group: "+group.Name))
+		buffer.WriteString(loggerGen(1, "Group Add User: "+user.Account.UniqueID+" ("+user.Jobs.id+")"+" Group: "+group.Name))
 
-		hIF.SetParam("userId", user.Account.UserID)
+		//hIF.SetParam("userId", user.Account.UserID)
+		hIF.SetParam("userId", user.Jobs.id)
 		hIF.SetParam("groupId", group.ID)
 		hIF.SetParam("memberRole", group.Membership)
 		hIF.OpenElement("options")
@@ -105,7 +106,7 @@ func userGroupsUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 			buffer.WriteString(loggerGen(1, "Group Add User XML "+XMLSTRING))
 			return false, errors.New(JSONResp.State.Error)
 		}
-		buffer.WriteString(loggerGen(1, "Group added to User: "+user.Account.UserID))
+		buffer.WriteString(loggerGen(1, "Group added to User: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 	}
 
 	return true, nil
@@ -114,9 +115,9 @@ func userGroupsRemove(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 
 	for groupIndex := range user.GroupsToRemove {
 		group := user.GroupsToRemove[groupIndex]
-		buffer.WriteString(loggerGen(1, "Group Remove User: "+user.Account.UserID+" Group Id: "+group))
+		buffer.WriteString(loggerGen(1, "Group Remove User: "+user.Account.UniqueID+" ("+user.Jobs.id+")"+" Group Id: "+group))
 
-		hIF.SetParam("userId", user.Account.UserID)
+		hIF.SetParam("userId", user.Jobs.id)
 		hIF.SetParam("groupId", group)
 
 		var XMLSTRING = hIF.GetParam()
@@ -141,7 +142,7 @@ func userGroupsRemove(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 			buffer.WriteString(loggerGen(1, "Group Remove User XML "+XMLSTRING))
 			return false, errors.New(JSONResp.State.Error)
 		}
-		buffer.WriteString(loggerGen(1, "Group Removed From User: "+user.Account.UserID))
+		buffer.WriteString(loggerGen(1, "Group Removed From User: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 	}
 
 	return true, nil
@@ -149,11 +150,12 @@ func userGroupsRemove(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 
 func userGroupSetHomeOrg(hIF *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) error {
 	if currentUser.Account.HomeOrg == "" {
-		err := "No Home Organisation set for User [" + currentUser.Account.UserID + "]"
+		err := "No Home Organisation set for User [" + currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" + "]"
 		buffer.WriteString(loggerGen(1, err))
 		return errors.New(err)
 	}
-	hIF.SetParam("userId", currentUser.Account.UserID)
+	hIF.SetParam("userId", currentUser.Jobs.id)
+	//hIF.SetParam("userId", currentUser.Account.UserID)
 	hIF.SetParam("homeOrganization", currentUser.Account.HomeOrg)
 	XMLSTRING := hIF.GetParam()
 	RespBody, xmlmcErr := hIF.Invoke("admin", "userUpdate")
@@ -171,6 +173,6 @@ func userGroupSetHomeOrg(hIF *apiLib.XmlmcInstStruct, currentUser *userWorkingDa
 		buffer.WriteString(loggerGen(1, "User Set Home Org XML "+XMLSTRING))
 		return errors.New(JSONResp.State.Error)
 	}
-	buffer.WriteString(loggerGen(1, "Home Organisation ["+currentUser.Account.HomeOrg+"] set for User ["+currentUser.Account.UserID+"]"))
+	buffer.WriteString(loggerGen(1, "Home Organisation ["+currentUser.Account.HomeOrg+"] set for User ["+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+"]"))
 	return nil
 }

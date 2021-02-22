@@ -1,6 +1,14 @@
 # CHANGELOG
 
-## 2.2.4 (February 5th, 2020)
+## 2.2.5 (February 22, 2021)
+
+Fixes:
+
+- fix to Create/Update functionality which prevented certain updates.
+- sample configuration file had superfluous comma which would produce an error
+- tidy up of code
+
+## 2.2.4 (February 5th, 2021)
 
 Changes:
 

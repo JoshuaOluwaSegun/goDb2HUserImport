@@ -308,32 +308,36 @@ func getUserAccountList(count uint64) {
 			break
 		}
 		//-- Push into Map
+		//-- Store All Users so we can search later for manager on HName
+		//-- This is better than calling back to the instance
 		switch SQLImportConf.User.HornbillUserIDColumn {
-			case 'h_employee_id': {
+		case "h_employee_id":
+			{
 				for index := range JSONResp.Params.RowData.Row {
-					//-- Store All Users so we can search later for manager on HName
-					//-- This is better than calling back to the instance
 					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HEmployeeID)] = JSONResp.Params.RowData.Row[index]
 				}
 			}
-			case 'h_login_id': {
+		case "h_login_id":
+			{
 				for index := range JSONResp.Params.RowData.Row {
-					//-- Store All Users so we can search later for manager on HName
-					//-- This is better than calling back to the instance
 					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HLoginID)] = JSONResp.Params.RowData.Row[index]
 				}
 			}
-			case 'h_user_id': { // as Go Switch doesn't fall through
+		case "h_email":
+			{
 				for index := range JSONResp.Params.RowData.Row {
-					//-- Store All Users so we can search later for manager on HName
-					//-- This is better than calling back to the instance
+					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HEmail)] = JSONResp.Params.RowData.Row[index]
+				}
+			}
+		case "h_user_id":
+			{ // as Go Switch doesn't fall through
+				for index := range JSONResp.Params.RowData.Row {
 					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = JSONResp.Params.RowData.Row[index]
 				}
 			}
-			default: {
+		default:
+			{
 				for index := range JSONResp.Params.RowData.Row {
-					//-- Store All Users so we can search later for manager on HName
-					//-- This is better than calling back to the instance
 					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = JSONResp.Params.RowData.Row[index]
 				}
 			}

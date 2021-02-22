@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.2.4"
+const version = "2.2.5"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -99,7 +99,7 @@ var HornbillUserStatusMap = map[string]string{
 }
 
 type userImportJobs struct {
-	id        string
+	id            string
 	create        bool
 	update        bool
 	updateHomeOrg bool
@@ -199,12 +199,12 @@ type sqlImportConfStruct struct {
 	APIKey     string `json:"APIKey"`
 	InstanceID string `json:"InstanceId"`
 	SQLConf    sqlConfStruct
-	Action    string `json:"Action"`
+	Action     string `json:"Action"`
 	User       struct {
-		AccountMapping AccountMappingStruct `json:"AccountMapping"`
-		UserDN         string               `json:"UserDN"`
-		HornbillUserIDColumn         string               `json:"HornbillUniqueColumn"`
-		Type           struct {
+		AccountMapping       AccountMappingStruct `json:"AccountMapping"`
+		UserDN               string               `json:"UserDN"`
+		HornbillUserIDColumn string               `json:"HornbillUniqueColumn"`
+		Type                 struct {
 			Action string `json:"Action"`
 		} `json:"Type"`
 		Status struct {
@@ -277,7 +277,7 @@ type sqlImportConfStruct struct {
 type AccountMappingStruct struct {
 	UserID         string `json:"UserID"`
 	LoginID        string `json:"LoginId"`
-	UniqueID     string
+	UniqueID       string
 	EmployeeID     string `json:"EmployeeId"`
 	UserType       string `json:"UserType"`
 	Name           string `json:"Name"`

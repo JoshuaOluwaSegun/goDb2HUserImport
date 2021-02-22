@@ -86,10 +86,10 @@ func processComplexField(u *map[string]interface{}, s string) string {
 	t, _ = t.Parse(s)
 	buf := bytes.NewBufferString("")
 	t.Execute(buf, p)
-	value := buf.String()
-	if value == "%!s(<nil>)" {
-		value = ""
-	}
+	value := strings.ReplaceAll(buf.String(), "%!s(<nil>)", "")
+	//if value == "%!s(<nil>)" {
+	//value = strings.ReplaceAll(value
+	//}
 
 	return value
 

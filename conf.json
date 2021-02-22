@@ -16,7 +16,7 @@
     "User": {
 	"UserDN": "{{.keysearch}}",
 	"HornbillUniqueColumn": "h_user_id",
-	,"AccountMapping":{
+	"AccountMapping":{
 		"UserID":"{{.keysearch}}",
 		"LoginID":"{{.keysearch}}",
 		"EmployeeID":"{{.keysearch}}",

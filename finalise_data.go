@@ -20,42 +20,45 @@ func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 		currentUser := HornbillCache.UsersWorkingIndex[index-1]
 		//-- Buffer for Logging
 		var buffer bytes.Buffer
-		
-		var blnCreateUser = (SQLImportConf.Action == "Both" || SQLImportConf.Action == "Create")
-		var blnUpdateUser = (SQLImportConf.Action == "Both" || SQLImportConf.Action == "Update")
-		var blnActionThis = ((currentUser.Jobs.create && blnCreateUser) || (currentUser.Jobs.update && blnUpdateUser))
 
-		if blnActionThis {
-			if currentUser.Jobs.create {
-				createUser(hIF, currentUser, &buffer)
-			}
+		//		var blnCreateUser = (SQLImportConf.Action == "Both" || SQLImportConf.Action == "Create")
+		//		var blnUpdateUser = (SQLImportConf.Action == "Both" || SQLImportConf.Action == "Update")
+		//		var blnActionThis = ((currentUser.Jobs.create && blnCreateUser) || (currentUser.Jobs.update && blnUpdateUser))
 
-			if currentUser.Jobs.update || currentUser.Jobs.updateType || currentUser.Jobs.updateSite {
-				updateUser(hIF, currentUser, &buffer)
-			}
-			if currentUser.Jobs.updateProfile {
-				updateUserProfile(hIF, currentUser, &buffer)
-			}
-			if currentUser.Jobs.updateImage {
-				updateUserImage(hIF, currentUser, &buffer)
-			}
-			if len(currentUser.GroupsToRemove) > 0 {
-				removeUserGroups(hIF, currentUser, &buffer)
-			}
-			if len(currentUser.Groups) > 0 {
-				updateUserGroups(hIF, currentUser, &buffer)
-			}
-			if len(currentUser.Roles) > 0 {
-				updateUserRoles(hIF, currentUser, &buffer)
-			}
-			if currentUser.Jobs.updateStatus {
-				updateUserStatus(hIF, currentUser, &buffer)
-			}
-			if currentUser.Jobs.updateHomeOrg {
-				userGroupSetHomeOrg(hIF, currentUser, &buffer)
-			}
+		//		if blnActionThis {
+		if currentUser.Jobs.create {
+			createUser(hIF, currentUser, &buffer)
 		}
-		
+
+		if currentUser.Jobs.update || currentUser.Jobs.updateType || currentUser.Jobs.updateSite {
+			updateUser(hIF, currentUser, &buffer)
+		}
+		if currentUser.Jobs.updateImage {
+			updateUserImage(hIF, currentUser, &buffer)
+		}
+		if len(currentUser.GroupsToRemove) > 0 {
+			removeUserGroups(hIF, currentUser, &buffer)
+		}
+		if len(currentUser.Groups) > 0 {
+			updateUserGroups(hIF, currentUser, &buffer)
+		}
+		if len(currentUser.Roles) > 0 {
+			updateUserRoles(hIF, currentUser, &buffer)
+		}
+		if currentUser.Jobs.updateStatus {
+			updateUserStatus(hIF, currentUser, &buffer)
+		}
+		if currentUser.Jobs.updateHomeOrg {
+			userGroupSetHomeOrg(hIF, currentUser, &buffer)
+		}
+		if currentUser.Jobs.updateProfile {
+			updateUserProfile(hIF, currentUser, &buffer)
+		} else {
+		}
+		//		} else {
+		//fmt.Println("S_w:XXXXX")
+		//		}
+
 		bar.Increment()
 
 		bufferMutex.Lock()
@@ -122,18 +125,20 @@ func updateUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataSt
 		CounterInc(2)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User: "+currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" +" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 
 func updateUserProfile(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
+
 	b, err := userProfileUpdate(espXmlmc, currentUser, buffer)
 	if b {
 		CounterInc(3)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Profile: "+currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" +" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Profile: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
 	}
+
 }
 
 func updateUserImage(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
@@ -142,7 +147,7 @@ func updateUserImage(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingD
 		CounterInc(4)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Image: "+currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" +" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Image: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 
@@ -152,7 +157,7 @@ func removeUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorking
 		CounterInc(8)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Remove User Groups: "+currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" +" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Remove User Groups: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 func updateUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
@@ -161,7 +166,7 @@ func updateUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorking
 		CounterInc(5)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Groups: "+currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" +" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Groups: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 
@@ -171,7 +176,7 @@ func updateUserRoles(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingD
 		CounterInc(6)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Roles: "+currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" +" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Roles: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }
 func updateUserStatus(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
@@ -180,6 +185,6 @@ func updateUserStatus(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorking
 		CounterInc(9)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Status: "+currentUser.Account.UniqueID + " (" + currentUser.Jobs.id + ")" +" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Status: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
 	}
 }

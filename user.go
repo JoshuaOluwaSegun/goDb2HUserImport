@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	apiLib "github.com/hornbill/goApiLib"
 )
 
@@ -26,7 +25,7 @@ func getUserFromDNCache(DN string) string {
 }
 
 func userCreate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer *bytes.Buffer) (bool, error) {
-	buffer.WriteString(loggerGen(1, "User Create: "+user.Account.UserID))
+	buffer.WriteString(loggerGen(1, "User Create: "+user.Account.UserID+" ("+user.Account.UniqueID+")"))
 	//-- Set Params based on already processed params
 	hIF.SetParam("userId", user.Account.UserID)
 	if user.Account.LoginID != "" {
@@ -96,8 +95,8 @@ func userCreate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 		hIF.ClearParam()
 		return true, nil
 	}
-	var XMLSTRING = hIF.GetParam()
-	fmt.Println(XMLSTRING)
+	//var XMLSTRING = hIF.GetParam()
+	//fmt.Println(XMLSTRING)
 
 	RespBody, xmlmcErr := hIF.Invoke("admin", "userCreate")
 	var JSONResp xmlmcResponse
@@ -119,9 +118,9 @@ func userCreate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 
 func userUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer *bytes.Buffer) (bool, error) {
 
-	buffer.WriteString(loggerGen(1, "User Update: "+user.Account.UserID))
+	buffer.WriteString(loggerGen(1, "User Update: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 	//-- Set Params based on already processed params
-	hIF.SetParam("userId", user.Account.UserID)
+	hIF.SetParam("userId", user.Jobs.id)
 	if user.Account.LoginID != "" {
 		hIF.SetParam("loginId", user.Account.LoginID)
 	}
@@ -202,17 +201,17 @@ func userUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 		buffer.WriteString(loggerGen(1, "User Update Profile XML "+XMLSTRING))
 		return false, errors.New(JSONResp.State.Error)
 	}
-	buffer.WriteString(loggerGen(1, "User Update Success: "+user.Account.UserID))
+	buffer.WriteString(loggerGen(1, "User Update Success: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 	return true, nil
 }
 
 func userProfileUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer *bytes.Buffer) (bool, error) {
-	buffer.WriteString(loggerGen(1, "User Update Profile: "+user.Account.UserID))
+	buffer.WriteString(loggerGen(1, "User Update Profile: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 
 	hIF.OpenElement("profileData")
 
 	//-- Set Params based on already processed params
-	hIF.SetParam("userId", user.Account.UserID)
+	hIF.SetParam("userId", user.Jobs.id)
 	if user.Profile.MiddleName != "" {
 		hIF.SetParam("middleName", user.Profile.MiddleName)
 	}
@@ -309,6 +308,7 @@ func userProfileUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct,
 
 	hIF.CloseElement("profileData")
 	var XMLSTRING = hIF.GetParam()
+
 	//-- Dry Run
 	if Flags.configDryRun {
 		buffer.WriteString(loggerGen(1, "User Update Profile XML "+XMLSTRING))
@@ -331,16 +331,17 @@ func userProfileUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct,
 		buffer.WriteString(loggerGen(1, "User Update Profile XML "+XMLSTRING))
 		return false, errors.New(JSONResp.State.Error)
 	}
-	buffer.WriteString(loggerGen(1, "User Update Profile Success: "+user.Account.UserID))
+
+	buffer.WriteString(loggerGen(1, "User Update Profile Success: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 	return true, nil
 }
 
 func userRolesUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer *bytes.Buffer) (bool, error) {
 
-	hIF.SetParam("userId", user.Account.UserID)
+	hIF.SetParam("userId", user.Jobs.id)
 	for roleIndex := range user.Roles {
 		role := user.Roles[roleIndex]
-		buffer.WriteString(loggerGen(1, "User Add Role User: "+user.Account.UserID+" Role: "+role))
+		buffer.WriteString(loggerGen(1, "User Add Role User: "+user.Account.UniqueID+" ("+user.Jobs.id+")"+" Role: "+role))
 		hIF.SetParam("role", role)
 	}
 	var XMLSTRING = hIF.GetParam()
@@ -365,13 +366,13 @@ func userRolesUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 		buffer.WriteString(loggerGen(1, "User Add Role XML "+XMLSTRING))
 		return false, errors.New(JSONResp.State.Error)
 	}
-	buffer.WriteString(loggerGen(1, "Role added to User: "+user.Account.UserID))
+	buffer.WriteString(loggerGen(1, "Role added to User: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 	return true, nil
 }
 
 func userStatusUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer *bytes.Buffer) (bool, error) {
 
-	hIF.SetParam("userId", user.Account.UserID)
+	hIF.SetParam("userId", user.Jobs.id)
 	hIF.SetParam("accountStatus", SQLImportConf.User.Status.Value)
 
 	var XMLSTRING = hIF.GetParam()
@@ -396,6 +397,6 @@ func userStatusUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, 
 		buffer.WriteString(loggerGen(1, "User Set Status XML "+XMLSTRING))
 		return false, errors.New(JSONResp.State.Error)
 	}
-	buffer.WriteString(loggerGen(1, "User Status Updated: "+user.Account.UserID))
+	buffer.WriteString(loggerGen(1, "User Status Updated: "+user.Account.UniqueID+" ("+user.Jobs.id+")"))
 	return true, nil
 }
