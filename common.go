@@ -75,8 +75,7 @@ func processComplexField(u *map[string]interface{}, s string) string {
 
 	//buf2 := bytes.NewBufferString("")
 	//-- Do we Lookup Site
-	var p map[string]string
-	p = make(map[string]string)
+	p := make(map[string]string)
 	//fmt.Println("%v", u)
 	for key, value := range *u {
 		p[key] = fmt.Sprintf("%s", value)
@@ -87,43 +86,7 @@ func processComplexField(u *map[string]interface{}, s string) string {
 	buf := bytes.NewBufferString("")
 	t.Execute(buf, p)
 	value := strings.ReplaceAll(buf.String(), "%!s(<nil>)", "")
-	//if value == "%!s(<nil>)" {
-	//value = strings.ReplaceAll(value
-	//}
-
 	return value
-
-	/*
-	   	//-- Match $variables from String
-	   	re1, err := regexp.Compile(`\[(.*?)\]`)
-	   	if err != nil {
-	   		logger(4, "Regex Error: "+fmt.Sprintf("%v", err), false)
-	   		return ""
-	   	}
-	   	//-- Get Array of all Matched max 100
-	   	result := re1.FindAllString(s, 100)
-
-	   	//-- Loop Matches
-	   	for _, v := range result {
-	   		//-- Grab DB Mapping value from result set
-	   //		var DBAttributeValue = u.GetAttributeValue(v[1 : len(v)-1])
-	   fmt.Println(v)
-	   		var DBAttributeValue = "aa" //u[GetAttributeValue(v[1 : len(v)-1])
-	   		//-- Check for Invalid Value
-	   		if DBAttributeValue == "" {
-	   			//logger(3, "Unable to Load DB Attribute: "+v[1:len(v)-1]+" For Input Param: "+s, false)
-	   			return DBAttributeValue
-	   		}
-	   		//-- TK UnescapeString to HTML entities are replaced
-	   		s = html.UnescapeString(strings.Replace(s, v, DBAttributeValue, 1))
-
-	   		//-- TK Remote Any White space leading and trailing a string
-	   		s = strings.TrimSpace(s)
-	   	}
-
-	   	//-- Return Value
-	   	return s
-	*/
 }
 
 //-- Match Any value wrapped in {} and get its Import Action Value

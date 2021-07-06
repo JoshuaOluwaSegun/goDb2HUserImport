@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+
 	//SQL Package
 	"github.com/hornbill/sqlx"
 	//SQL Drivers
@@ -29,7 +30,7 @@ func buildConnectionString() string {
 		connectString = connectString + ";database=" + SQLImportConf.SQLConf.Database
 		connectString = connectString + ";user id=" + SQLImportConf.SQLConf.UserName
 		connectString = connectString + ";password=" + SQLImportConf.SQLConf.Password
-		if SQLImportConf.SQLConf.Encrypt == false {
+		if !SQLImportConf.SQLConf.Encrypt {
 			connectString = connectString + ";encrypt=disable"
 		}
 		if SQLImportConf.SQLConf.Port != 0 {

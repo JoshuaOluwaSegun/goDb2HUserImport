@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.2.5"
+const version = "2.2.6"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -143,7 +143,6 @@ var Time struct {
 
 //SQLImportConf holds the import config
 var SQLImportConf sqlImportConfStruct
-var ldapServerAuth ldapServerConfAuthStruct
 
 //var ldapUsers []*ldap.Entry
 var counters struct {
@@ -163,26 +162,6 @@ var counters struct {
 }
 
 //----- Structures -----
-type ldapServerConfAuthStruct struct {
-	Host     string
-	UserName string
-	Password string
-	Port     uint16
-}
-type ldapServerConfStruct struct {
-	KeySafeID          int
-	ConnectionType     string
-	InsecureSkipVerify bool
-	Scope              int
-	DerefAliases       int
-	SizeLimit          int
-	TimeLimit          int
-	TypesOnly          bool
-	Filter             string
-	DSN                string
-	Debug              bool
-}
-
 type sqlConfStruct struct {
 	Driver   string
 	Server   string
@@ -453,22 +432,6 @@ type xmlmcGroupListResponse struct {
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
 }
-type xmlmcConfigLoadResponse struct {
-	Params struct {
-		PrimaryEntityData struct {
-			Record struct {
-				HDefinition string `json:"h_definition"`
-			} `json:"record"`
-		} `json:"primaryEntityData"`
-	} `json:"params"`
-	State stateJSONStruct `json:"state"`
-}
-type xmlmcKeySafeResponse struct {
-	Params struct {
-		Data string `json:"data"`
-	} `json:"params"`
-	State stateJSONStruct `json:"state"`
-}
 type xmlmcCountResponse struct {
 	Params struct {
 		RowData struct {
@@ -506,12 +469,12 @@ type stateJSONStruct struct {
 	Error     string `json:"error"`
 }
 type xmlmcResponse struct {
-	MethodResult string          `json:"status,attr"`
+	MethodResult string          `json:"status"`
 	State        stateJSONStruct `json:"state"`
 }
 
 type xmlmcLicenseInfo struct {
-	MethodResult string `json:"status,attr"`
+	MethodResult string `json:"status"`
 	Params       struct {
 		ServerBuild int
 	} `json:"params"`

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/hornbill/goApiLib"
+	apiLib "github.com/hornbill/goApiLib"
 	"github.com/hornbill/pb"
 )
 
@@ -53,12 +53,7 @@ func worker(id int, jobs <-chan int, results chan<- int, bar *pb.ProgressBar) {
 		}
 		if currentUser.Jobs.updateProfile {
 			updateUserProfile(hIF, currentUser, &buffer)
-		} else {
 		}
-		//		} else {
-		//fmt.Println("S_w:XXXXX")
-		//		}
-
 		bar.Increment()
 
 		bufferMutex.Lock()
