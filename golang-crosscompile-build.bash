@@ -47,6 +47,7 @@ do
     #Copy Source to Build Dir
     cp LICENSE.md "builds/$goos/$goarch/LICENSE.md"
     cp README.md "builds/$goos/$goarch/README.md"
+    cp conf.json "builds/$goos/$goarch/conf.json"
 
     printf "Build Zip \n"
     cd "builds/$goos/$goarch/"
