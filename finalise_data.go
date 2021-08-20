@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 
 	apiLib "github.com/hornbill/goApiLib"
 	"github.com/hornbill/pb"
@@ -109,7 +108,7 @@ func createUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataSt
 		CounterInc(1)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Create User: "+currentUser.Account.UniqueID+" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Create User: "+currentUser.Account.UniqueID+" Error: "+err.Error()))
 	}
 
 }
@@ -119,8 +118,10 @@ func updateUser(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataSt
 	if b {
 		CounterInc(2)
 	} else {
-		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
+		if err.Error() != "There are no values to update" {
+			CounterInc(7)
+			buffer.WriteString(loggerGen(4, "Unable to Update User: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+") Error: "+err.Error()))
+		}
 	}
 }
 
@@ -130,8 +131,10 @@ func updateUserProfile(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkin
 	if b {
 		CounterInc(3)
 	} else {
-		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Profile: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
+		if err.Error() != "There are no values to update" {
+			CounterInc(7)
+			buffer.WriteString(loggerGen(4, "Unable to Update User Profile: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+") Error: "+err.Error()))
+		}
 	}
 
 }
@@ -142,7 +145,7 @@ func updateUserImage(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingD
 		CounterInc(4)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Image: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Image: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+") Error: "+err.Error()))
 	}
 }
 
@@ -152,7 +155,7 @@ func removeUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorking
 		CounterInc(8)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Remove User Groups: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Remove User Groups: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+") Error: "+err.Error()))
 	}
 }
 func updateUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
@@ -161,7 +164,7 @@ func updateUserGroups(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorking
 		CounterInc(5)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Groups: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Groups: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+") Error: "+err.Error()))
 	}
 }
 
@@ -171,7 +174,7 @@ func updateUserRoles(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingD
 		CounterInc(6)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Roles: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Roles: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+") Error: "+err.Error()))
 	}
 }
 func updateUserStatus(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorkingDataStruct, buffer *bytes.Buffer) {
@@ -180,6 +183,6 @@ func updateUserStatus(espXmlmc *apiLib.XmlmcInstStruct, currentUser *userWorking
 		CounterInc(9)
 	} else {
 		CounterInc(7)
-		buffer.WriteString(loggerGen(4, "Unable to Update User Status: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+fmt.Sprintf("%s", err)))
+		buffer.WriteString(loggerGen(4, "Unable to Update User Status: "+currentUser.Account.UniqueID+" ("+currentUser.Jobs.id+")"+" Error: "+err.Error()))
 	}
 }

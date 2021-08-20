@@ -81,7 +81,7 @@ func processData() {
 		//-- Check Map no need to loop
 		currentUser.Jobs.id = hornbillUserData.HUserID
 
-		if checkUserID && SQLImportConf.Action != "Create" {
+		if checkUserID && strings.ToLower(SQLImportConf.Action) != "create" {
 			currentUser.Jobs.update = checkUserNeedsUpdate(currentUser, hornbillUserData)
 
 			currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)
@@ -102,7 +102,7 @@ func processData() {
 
 			currentUser.Jobs.updateStatus = checkUserNeedsStatusUpdate(currentUser, hornbillUserData)
 
-		} else if SQLImportConf.Action != "Update" {
+		} else if strings.ToLower(SQLImportConf.Action) != "update" {
 
 			//entry does not exist in Hornbill, so creation - requires User ID from DB (and not from Hornbill)
 			currentUser.Jobs.id = currentUser.Account.UserID
@@ -136,6 +136,7 @@ func processData() {
 		} else {
 			loggerOutput := []string{
 				"User: " + userID,
+				"Operation: " + SQLImportConf.Action,
 				"Create: " + strconv.FormatBool(currentUser.Jobs.create),
 				"Update: " + strconv.FormatBool(currentUser.Jobs.update),
 				"Update Type: " + strconv.FormatBool(currentUser.Jobs.updateType),

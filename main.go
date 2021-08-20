@@ -191,7 +191,7 @@ func outputEnd() {
 	logger(2, "Import Complete", true)
 	//-- End output
 	if counters.errors > 0 {
-		logger(4, "One or more errors encountered please check the log file", true)
+		logger(4, "One or more errors encountered, please check the log file", true)
 		logger(4, "Error Count: "+fmt.Sprintf("%d", counters.errors), true)
 		//logger(4, "Check Log File for Details", true)
 	}

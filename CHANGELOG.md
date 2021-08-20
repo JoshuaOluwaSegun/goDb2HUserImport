@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.2.7 (August 20th, 2021)
+
+Change:
+
+- Minor (typo) corrections
+
 ## 2.2.6 (July 6th, 2021)
 
 Change:

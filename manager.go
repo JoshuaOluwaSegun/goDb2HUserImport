@@ -27,7 +27,7 @@ func getManager(importData *userWorkingDataStruct, currentData userAccountStruct
 			logger(1, "Found Manager in Distinguished Name  Cache: "+managerID, false)
 			return managerID
 		}
-		logger(1, "Unable to find Manager in Distinguished Name  Cache Coninuing search", false)
+		logger(1, "Unable to find Manager in Distinguished Name  Cache Continuing search", false)
 	}
 
 	//-- Dont Continue if we didn't get anything
@@ -35,7 +35,7 @@ func getManager(importData *userWorkingDataStruct, currentData userAccountStruct
 		return ""
 	}
 
-	//-- Pull Data from Attriute using regext
+	//-- Pull Data from Attribute using regext
 	if SQLImportConf.User.Manager.Options.GetStringFromValue.Regex != "" {
 		logger(1, "DB Manager String: "+ManagerAttributeName, false)
 		ManagerAttributeName = getNameFromDBString(ManagerAttributeName)
@@ -47,7 +47,7 @@ func getManager(importData *userWorkingDataStruct, currentData userAccountStruct
 		logger(1, "Looking Up Manager from Cache: "+ManagerAttributeName, false)
 		managerIsInCache, ManagerIDCache := managerInCache(ManagerAttributeName)
 
-		//-- Check if we have Chached the site already
+		//-- Check if we have Cached the users manager already
 		if managerIsInCache {
 			logger(1, "Found Manager in Cache: "+ManagerIDCache, false)
 			return ManagerIDCache
@@ -59,6 +59,7 @@ func getManager(importData *userWorkingDataStruct, currentData userAccountStruct
 			logger(1, "Manager Lookup found Id: "+ManagerIDInstance, false)
 			return ManagerIDInstance
 		}
+		logger(1, "Manager Not Found: "+ManagerAttributeName, false)
 	} else {
 		logger(1, "Search for Manager is Disabled", false)
 		//-- Assume data is manager id
