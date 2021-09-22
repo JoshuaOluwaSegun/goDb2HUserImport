@@ -127,8 +127,13 @@ func userUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, buffer
 	if user.Account.EmployeeID != "" && serverBuild >= employeeIDMinServerBuild {
 		hIF.SetParam("employeeId", user.Account.EmployeeID)
 	}
-	hIF.SetParam("userType", user.Account.UserType)
-	hIF.SetParam("name", user.Account.Name)
+
+	if user.Account.UserType != "" {
+		hIF.SetParam("userType", user.Account.UserType)
+	}
+	if user.Account.Name != "" {
+		hIF.SetParam("name", user.Account.Name)
+	}
 	//hIF.SetParam("password", user.Password)
 	if user.Account.FirstName != "" {
 		hIF.SetParam("firstName", user.Account.FirstName)

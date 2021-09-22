@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.2.6"
+const version = "2.2.8"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.2.8 (September 22nd, 2021)
+
+Change:
+
+- Modification such that updates do not require a Name and userType set
+
 ## 2.2.7 (August 20th, 2021)
 
 Change:
