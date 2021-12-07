@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.2.9 (December 7th, 2021)
+
+Fix:
+
+- Issue with attributes not comparing correctly
+
 ## 2.2.8 (September 22nd, 2021)
 
 Change:

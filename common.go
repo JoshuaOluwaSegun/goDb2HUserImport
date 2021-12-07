@@ -415,7 +415,7 @@ func getLastHistory() {
 	//-- Disable running multiple imports at once unless flagged as otherwise
 	if len(JSONResp.Params.RowData.Row) > 0 {
 		if JSONResp.Params.RowData.Row[0].HStatus == "1" && !Flags.configForceRun {
-			logger(4, "Unable to run import, a provious import is still running", true)
+			logger(4, "Unable to run import, a previous import is still running", true)
 			os.Exit(108)
 		}
 	}
