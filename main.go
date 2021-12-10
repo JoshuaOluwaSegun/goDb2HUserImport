@@ -73,6 +73,11 @@ func main() {
 
 	getServerBuild()
 
+	sysSettingPageSize, _ := strconv.Atoi(sysOptionGet("api.xmlmc.queryExec.maxResultsAllowed"))
+	if SQLImportConf.Advanced.PageSize < sysSettingPageSize {
+		SQLImportConf.Advanced.PageSize = sysSettingPageSize
+		logger(0, "[MESSAGE] Overridden Page Size "+fmt.Sprintf("%d", SQLImportConf.Advanced.PageSize), true)
+	}
 	//-- Check import not already running
 	getLastHistory()
 
@@ -267,7 +272,7 @@ func loadConfig() sqlImportConfStruct {
 	if err != nil {
 		logger(4, "Error Decoding Configuration File: "+fmt.Sprintf("%v", err), true)
 	}
-
+	logger(0, "[MESSAGE] Import Defined Page Size "+fmt.Sprintf("%d", eldapConf.Advanced.PageSize), true)
 	//-- Return New Congfig
 	return eldapConf
 }

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.3.0 (December 10th, 2021)
+
+Change:
+
+- Improved performance when caching user account groups
+
 ## 2.2.9 (December 7th, 2021)
 
 Fix:

@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.2.9"
+const version = "2.3.0"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -46,7 +46,8 @@ type xmlmcSettingResponse struct {
 			Value string `json:"value"`
 		} `json:"option"`
 	} `json:"params"`
-	State stateJSONStruct `json:"state"`
+	State        stateJSONStruct `json:"state"`
+	MethodResult bool            `json:"@status"`
 }
 
 // Flags List
@@ -318,14 +319,6 @@ type xmlmcSiteListResponse struct {
 	Params struct {
 		RowData struct {
 			Row []siteStruct `json:"row"`
-		} `json:"rowData"`
-	} `json:"params"`
-	State stateJSONStruct `json:"state"`
-}
-type xmlmcUserListResponse struct {
-	Params struct {
-		RowData struct {
-			Row []userAccountStruct `json:"row"`
 		} `json:"rowData"`
 	} `json:"params"`
 	State stateJSONStruct `json:"state"`
