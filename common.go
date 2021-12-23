@@ -53,6 +53,12 @@ func getUserFieldValue(u *map[string]interface{}, s string, custom map[string]st
 	stringToReturn = processImportAction(custom, stringToReturn)
 	return stringToReturn
 }
+func getUserStatusValue(u *map[string]interface{}, custom map[string]string) string {
+	var UserMapping = SQLImportConf.User.Status.Value
+	var stringToReturn = processComplexField(u, UserMapping)
+	stringToReturn = processImportAction(custom, stringToReturn)
+	return stringToReturn
+}
 
 //-- Get XMLMC Feild from mapping via profile Object
 //func getProfileFieldValue(u *ldap.Entry, s string, custom map[string]string) string {

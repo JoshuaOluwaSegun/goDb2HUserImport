@@ -159,7 +159,7 @@ func checkUserNeedsStatusCreate(importData *userWorkingDataStruct, currentData u
 
 	if SQLImportConf.User.Role.Action == "Both" || SQLImportConf.User.Role.Action == "Create" {
 		//-- By default they are created active so if we need to change the status it should be done if not active
-		if SQLImportConf.User.Status.Value != "active" {
+		if importData.Account.UserStatus != "active" {
 			return true
 		}
 	}
@@ -170,7 +170,7 @@ func checkUserNeedsStatusUpdate(importData *userWorkingDataStruct, currentData u
 
 	if SQLImportConf.User.Status.Action == "Both" || SQLImportConf.User.Status.Action == "Update" {
 		//-- Check current status != config status
-		if HornbillUserStatusMap[currentData.HAccountStatus] != SQLImportConf.User.Status.Value {
+		if HornbillUserStatusMap[currentData.HAccountStatus] != importData.Account.UserStatus {
 			return true
 		}
 	}
@@ -762,6 +762,7 @@ func processUserParams(l *map[string]interface{}, userID string) {
 	data.Account.TimeFormat = getUserFieldValue(l, "TimeFormat", data.Custom)
 	data.Account.CurrencySymbol = getUserFieldValue(l, "CurrencySymbol", data.Custom)
 	data.Account.CountryCode = getUserFieldValue(l, "CountryCode", data.Custom)
+	data.Account.UserStatus = getUserStatusValue(l, data.Custom)
 
 	data.Profile.MiddleName = getProfileFieldValue(l, "MiddleName", data.Custom)
 	data.Profile.JobDescription = getProfileFieldValue(l, "JobDescription", data.Custom)

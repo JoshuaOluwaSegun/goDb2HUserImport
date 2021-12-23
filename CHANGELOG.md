@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.3.1 (December 23rd, 2021)
+
+Change:
+
+- User.Status.Value can now be based on a DB result
+
 ## 2.3.0 (December 10th, 2021)
 
 Change:

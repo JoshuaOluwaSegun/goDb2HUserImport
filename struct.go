@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.3.0"
+const version = "2.3.1"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -260,6 +260,7 @@ type AccountMappingStruct struct {
 	UniqueID       string
 	EmployeeID     string `json:"EmployeeId"`
 	UserType       string `json:"UserType"`
+	UserStatus     string
 	Name           string `json:"Name"`
 	Password       string `json:"Password"`
 	FirstName      string `json:"FirstName"`
