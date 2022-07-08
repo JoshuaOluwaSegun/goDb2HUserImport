@@ -58,26 +58,18 @@ func processData() {
 		var checkUserID = false
 		switch SQLImportConf.User.HornbillUserIDColumn {
 		case "h_employee_id":
-			{
-				checkUserID = (strings.ToLower(hornbillUserData.HEmployeeID) == userID)
-			}
+			checkUserID = strings.EqualFold(hornbillUserData.HEmployeeID, userID)
 		case "h_login_id":
-			{
-				checkUserID = (strings.ToLower(hornbillUserData.HLoginID) == userID)
-			}
+			checkUserID = strings.EqualFold(hornbillUserData.HLoginID, userID)
 		case "h_email":
-			{
-				checkUserID = (strings.ToLower(hornbillUserData.HEmail) == userID)
-			}
+			checkUserID = strings.EqualFold(hornbillUserData.HEmail, userID)
 		case "h_user_id":
-			{ // as Go Switch doesn't fall through
-				checkUserID = (strings.ToLower(hornbillUserData.HUserID) == userID)
-			}
+			checkUserID = strings.EqualFold(hornbillUserData.HUserID, userID)
 		default:
-			{
-				checkUserID = (strings.ToLower(hornbillUserData.HUserID) == userID)
-			}
+			checkUserID = strings.EqualFold(hornbillUserData.HUserID, userID)
+
 		}
+
 		//-- Check Map no need to loop
 		currentUser.Jobs.id = hornbillUserData.HUserID
 

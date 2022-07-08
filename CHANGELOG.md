@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.3.1 (July 8th, 2021)
+
+Fix:
+
+- Fixed issue where Hornbill users were not being cached, so could not be updated
+
 ## 2.3.1 (December 23rd, 2021)
 
 Change:

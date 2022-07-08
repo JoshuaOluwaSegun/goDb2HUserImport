@@ -31,13 +31,12 @@ func initXMLMC() {
 	}
 }
 func loadUsers() {
-	//-- Init One connection to Hornbill to load all data
 	initXMLMC()
 	logger(1, "Loading Users from Hornbill", false)
 
-	count := getCount("getUserAccountsGroupsListImport")
-	userAccountRecordCount := getUserAccountsGroupsList(count)
-	logger(1, "User Orgs Loaded: "+fmt.Sprintf("%d", userAccountRecordCount)+"\n", false)
+	count := getCount("getUserAccountsList")
+	logger(1, "getUserAccountsList Count: "+fmt.Sprintf("%d", count), false)
+	getUserAccountList(count)
 
 	logger(1, "Users Loaded: "+fmt.Sprintf("%d", len(HornbillCache.Users)), false)
 }
@@ -119,6 +118,84 @@ func userIDExistsInDB(userID string) bool {
 	userID = strings.ToLower(userID)
 	_, present := HornbillCache.UsersWorking[userID]
 	return present
+}
+
+func getUserAccountList(count uint64) {
+	var loopCount uint64
+	//-- Init Map
+	HornbillCache.Users = make(map[string]userAccountStruct)
+	//-- Load Results in pages of pageSize
+	bar := pb.StartNew(int(count))
+	for loopCount < count {
+		logger(1, "Loading User Accounts List Offset: "+fmt.Sprintf("%d", loopCount)+"\n", false)
+
+		hornbillImport.SetParam("application", "com.hornbill.core")
+		hornbillImport.SetParam("queryName", "getUserAccountsList")
+		hornbillImport.OpenElement("queryParams")
+		hornbillImport.SetParam("rowstart", strconv.FormatUint(loopCount, 10))
+		hornbillImport.SetParam("limit", strconv.Itoa(pageSize))
+		hornbillImport.CloseElement("queryParams")
+		RespBody, xmlmcErr := hornbillImport.Invoke("data", "queryExec")
+
+		var JSONResp xmlmcUserListResponse
+		if xmlmcErr != nil {
+			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", xmlmcErr), false)
+			break
+		}
+		err := json.Unmarshal([]byte(RespBody), &JSONResp)
+		if err != nil {
+			logger(4, "Unable to Query Accounts List "+fmt.Sprintf("%s", err), false)
+			break
+		}
+		if JSONResp.State.Error != "" {
+			logger(4, "Unable to Query Accounts List "+JSONResp.State.Error, false)
+			break
+		}
+		//-- Push into Map
+		//-- Store All Users so we can search later for manager on HName
+		//-- This is better than calling back to the instance
+		switch SQLImportConf.User.HornbillUserIDColumn {
+		case "h_employee_id":
+			{
+				for index := range JSONResp.Params.RowData.Row {
+					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HEmployeeID)] = JSONResp.Params.RowData.Row[index]
+				}
+			}
+		case "h_login_id":
+			{
+				for index := range JSONResp.Params.RowData.Row {
+					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HLoginID)] = JSONResp.Params.RowData.Row[index]
+				}
+			}
+		case "h_email":
+			{
+				for index := range JSONResp.Params.RowData.Row {
+					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HEmail)] = JSONResp.Params.RowData.Row[index]
+				}
+			}
+		case "h_user_id":
+			{ // as Go Switch doesn't fall through
+				for index := range JSONResp.Params.RowData.Row {
+					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = JSONResp.Params.RowData.Row[index]
+				}
+			}
+		default:
+			{
+				for index := range JSONResp.Params.RowData.Row {
+					HornbillCache.Users[strings.ToLower(JSONResp.Params.RowData.Row[index].HUserID)] = JSONResp.Params.RowData.Row[index]
+				}
+			}
+		}
+
+		// Add 100
+		loopCount += uint64(pageSize)
+		bar.Add(len(JSONResp.Params.RowData.Row))
+		//-- Check for empty result set
+		if len(JSONResp.Params.RowData.Row) == 0 {
+			break
+		}
+	}
+	bar.FinishPrint("Accounts Loaded  \n")
 }
 
 func getUserAccountsGroupsList(count uint64) (recordCount int64) {

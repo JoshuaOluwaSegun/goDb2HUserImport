@@ -79,10 +79,7 @@ func getProfileFieldValue(u *map[string]interface{}, s string, custom map[string
 //func processComplexField(u *ldap.Entry, s string) string {
 func processComplexField(u *map[string]interface{}, s string) string {
 
-	//buf2 := bytes.NewBufferString("")
-	//-- Do we Lookup Site
 	p := make(map[string]string)
-	//fmt.Println("%v", u)
 	for key, value := range *u {
 		p[key] = fmt.Sprintf("%s", value)
 	}
@@ -91,7 +88,10 @@ func processComplexField(u *map[string]interface{}, s string) string {
 	t, _ = t.Parse(s)
 	buf := bytes.NewBufferString("")
 	t.Execute(buf, p)
-	value := strings.ReplaceAll(buf.String(), "%!s(<nil>)", "")
+	value := ""
+	if buf != nil {
+		value = buf.String()
+	}
 	return value
 }
 

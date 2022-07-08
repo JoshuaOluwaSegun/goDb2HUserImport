@@ -6,7 +6,7 @@ import (
 )
 
 //----- Constants -----
-const version = "2.3.1"
+const version = "2.3.2"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -173,6 +173,14 @@ type sqlConfStruct struct {
 	Database string
 	Encrypt  bool
 	UserID   string
+}
+type xmlmcUserListResponse struct {
+	Params struct {
+		RowData struct {
+			Row []userAccountStruct `json:"row"`
+		} `json:"rowData"`
+	} `json:"params"`
+	State stateJSONStruct `json:"state"`
 }
 
 type sqlImportConfStruct struct {
