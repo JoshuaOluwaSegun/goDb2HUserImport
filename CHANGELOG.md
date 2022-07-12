@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.3.1 (July 8th, 2021)
+## 2.3.2 (July 8th, 2022)
 
 Fix:
 
