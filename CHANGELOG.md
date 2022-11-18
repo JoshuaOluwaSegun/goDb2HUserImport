@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.3.3 (November 18th, 2022)
+
+Fix:
+
+- The way empty strings get processed
+
 ## 2.3.2 (July 8th, 2022)
 
 Fix:
