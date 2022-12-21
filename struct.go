@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-//----- Constants -----
-const version = "2.3.3"
+// ----- Constants -----
+const version = "3.0.0"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -18,6 +18,10 @@ var (
 	serverBuild              int
 	employeeIDMinServerBuild = 3241
 	localDBUsers             []map[string]interface{}
+
+	repo = "hornbill/goDb2HUserImport"
+
+	twoFAMap = map[string]string{"0": "disabled", "1": "email"}
 
 	//Password profiles
 	passwordProfile       passwordProfileStruct
@@ -142,10 +146,10 @@ var Time struct {
 	endTime   time.Duration
 }
 
-//SQLImportConf holds the import config
+// SQLImportConf holds the import config
 var SQLImportConf sqlImportConfStruct
 
-//var ldapUsers []*ldap.Entry
+// var ldapUsers []*ldap.Entry
 var counters struct {
 	errors         uint16
 	updated        uint16
@@ -162,7 +166,7 @@ var counters struct {
 	traffic uint64
 }
 
-//----- Structures -----
+// ----- Structures -----
 type sqlConfStruct struct {
 	Driver   string
 	Server   string
@@ -263,30 +267,36 @@ type sqlImportConfStruct struct {
 
 // AccountMappingStruct Used
 type AccountMappingStruct struct {
-	UserID         string `json:"UserID"`
-	LoginID        string `json:"LoginId"`
-	UniqueID       string
-	EmployeeID     string `json:"EmployeeId"`
-	UserType       string `json:"UserType"`
-	UserStatus     string
-	Name           string `json:"Name"`
-	Password       string `json:"Password"`
-	FirstName      string `json:"FirstName"`
-	LastName       string `json:"LastName"`
-	JobTitle       string `json:"JobTitle"`
-	Site           string `json:"Site"`
-	Phone          string `json:"Phone"`
-	Email          string `json:"Email"`
-	Mobile         string `json:"Mobile"`
-	AbsenceMessage string `json:"AbsenceMessage"`
-	TimeZone       string `json:"TimeZone"`
-	Language       string `json:"Language"`
-	DateTimeFormat string `json:"DateTimeFormat"`
-	DateFormat     string `json:"DateFormat"`
-	TimeFormat     string `json:"TimeFormat"`
-	CurrencySymbol string `json:"CurrencySymbol"`
-	CountryCode    string `json:"CountryCode"`
-	HomeOrg        string `json:"HomeOrg"`
+	UserID                          string `json:"UserID"`
+	LoginID                         string `json:"LoginId"`
+	UniqueID                        string
+	EmployeeID                      string `json:"EmployeeId"`
+	UserType                        string `json:"UserType"`
+	UserStatus                      string
+	Name                            string `json:"Name"`
+	Password                        string `json:"Password"`
+	FirstName                       string `json:"FirstName"`
+	LastName                        string `json:"LastName"`
+	JobTitle                        string `json:"JobTitle"`
+	Site                            string `json:"Site"`
+	Phone                           string `json:"Phone"`
+	Email                           string `json:"Email"`
+	Mobile                          string `json:"Mobile"`
+	AbsenceMessage                  string `json:"AbsenceMessage"`
+	TimeZone                        string `json:"TimeZone"`
+	Language                        string `json:"Language"`
+	DateTimeFormat                  string `json:"DateTimeFormat"`
+	DateFormat                      string `json:"DateFormat"`
+	TimeFormat                      string `json:"TimeFormat"`
+	CurrencySymbol                  string `json:"CurrencySymbol"`
+	CountryCode                     string `json:"CountryCode"`
+	HomeOrg                         string `json:"HomeOrg"`
+	Enable2FA                       string `json:"Enable2fa"`
+	UpdateSecOptions                bool
+	SecurityFlag                    string
+	DisableDirectLogin              string `json:"DisableDirectLogin"`
+	DisableDirectLoginPasswordReset string `json:"DisableDirectLoginPasswordReset"`
+	DisableDevicePairing            string `json:"DisableDevicePairing"`
 }
 
 // ProfileMappingStruct Used
@@ -369,6 +379,8 @@ type userAccountStruct struct {
 	HTimeFormat          string `json:"h_time_format"`
 	HCurrencySymbol      string `json:"h_currency_symbol"`
 	HLastLogon           string `json:"h_last_logon"`
+	HLogon2FAMethod      string `json:"h_logon_2fa_method"`
+	HSecOptions          string `json:"h_sec_options"`
 	HSnA                 string `json:"h_sn_a"`
 	HSnB                 string `json:"h_sn_b"`
 	HSnC                 string `json:"h_sn_c"`

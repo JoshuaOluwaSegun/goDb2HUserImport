@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 3.0.0 (December 21st, 2022)
+
+Fix:
+
+- Issue with tool attempting to perform unnecessary updates when there are more than 65k records returned from the DB
+
+Features:
+
+- Added ability for tool to self-update when a minor or patch update is available
+- Added support for setting the following new security settings against imported users:
+  - 2 Factor Authentication
+  - Disable direct login
+  - Disable direct login password reset
+  - Disable device pairing on user profile
+
+Change:
+
+- Removed references to deprecated ioutil, replaced with io
+- Removed API Key output to CLI when running tool
+
 ## 2.3.3 (November 18th, 2022)
 
 Fix:

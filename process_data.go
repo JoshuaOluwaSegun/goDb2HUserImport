@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-//-- Store DB Users in Map
+// -- Store DB Users in Map
 func processDBUsers() {
 	logger(1, "Processing DB User Data", true)
 
@@ -108,8 +108,6 @@ func processData() {
 			currentUser.Jobs.updateStatus = checkUserNeedsStatusCreate(currentUser, hornbillUserData)
 			currentUser.Jobs.create = true
 			currentUser.Jobs.updateProfile = checkUserNeedsProfileUpdate(currentUser, hornbillUserData)
-			///########
-
 		} else {
 			currentUser.Jobs.update = false
 			currentUser.Jobs.updateProfile = false
@@ -138,7 +136,11 @@ func processData() {
 				"Update Home Organisation: " + strconv.FormatBool(currentUser.Jobs.updateHomeOrg),
 				"Roles Count: " + fmt.Sprintf("%d", len(currentUser.Roles)),
 				"Update Image: " + strconv.FormatBool(currentUser.Jobs.updateImage),
-				"Groups: " + fmt.Sprintf("%d", len(currentUser.Groups))}
+				"Groups: " + fmt.Sprintf("%d", len(currentUser.Groups)),
+				"Enable2FA: " + currentUser.Account.Enable2FA,
+				"DisableDirectLogin: " + currentUser.Account.DisableDirectLogin,
+				"DisableDirectLoginPasswordReset: " + currentUser.Account.DisableDirectLoginPasswordReset,
+				"DisableDevicePairing: " + currentUser.Account.DisableDevicePairing}
 
 			strings.Join(loggerOutput[:], "\n\t")
 			logger(1, strings.Join(loggerOutput[:], "\n\t")+"\n", false)
@@ -414,84 +416,125 @@ func checkUserNeedsSiteUpdate(importData *userWorkingDataStruct, currentData use
 	return false
 }
 func checkUserNeedsUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
+	userUpdate := false
 	if importData.Account.LoginID != "" && importData.Account.LoginID != currentData.HLoginID {
 		logger(1, "LoginID: "+importData.Account.LoginID+" - "+currentData.HLoginID, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.EmployeeID != "" && importData.Account.EmployeeID != currentData.HEmployeeID {
 		logger(1, "EmployeeID: "+importData.Account.EmployeeID+" - "+currentData.HEmployeeID, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.Name != "" && importData.Account.Name != currentData.HName {
 		logger(1, "Name: "+importData.Account.Name+" - "+currentData.HName, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.FirstName != "" && importData.Account.FirstName != currentData.HFirstName {
 		logger(1, "FirstName: "+importData.Account.FirstName+" - "+currentData.HFirstName, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.LastName != "" && importData.Account.LastName != currentData.HLastName {
 		logger(1, "LastName: "+importData.Account.LastName+" - "+currentData.HLastName, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.JobTitle != "" && importData.Account.JobTitle != currentData.HJobTitle {
 		logger(1, "JobTitle: "+importData.Account.JobTitle+" - "+currentData.HJobTitle, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.Phone != "" && importData.Account.Phone != currentData.HPhone {
 		logger(1, "Phone: "+importData.Account.Phone+" - "+currentData.HPhone, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.Email != "" && importData.Account.Email != currentData.HEmail {
 		logger(1, "Email: "+importData.Account.Email+" - "+currentData.HEmail, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.Mobile != "" && importData.Account.Mobile != currentData.HMobile {
 		logger(1, "Mobile: "+importData.Account.Mobile+" - "+currentData.HMobile, true)
-		return true
+		userUpdate = true
 	}
 	if importData.Account.AbsenceMessage != "" && importData.Account.AbsenceMessage != currentData.HAvailStatusMsg {
 		logger(1, "AbsenceMessage: "+importData.Account.AbsenceMessage+" - "+currentData.HAvailStatusMsg, true)
-		return true
+		userUpdate = true
 	}
 	//-- If TimeZone mapping is empty then ignore as it defaults to a value
 	if importData.Account.TimeZone != "" && importData.Account.TimeZone != currentData.HTimezone {
 		logger(1, "TimeZone: "+importData.Account.TimeZone+" - "+currentData.HTimezone, true)
-		return true
+		userUpdate = true
 	}
 	//-- If Language mapping is empty then ignore as it defaults to a value
 	if importData.Account.Language != "" && importData.Account.Language != currentData.HLanguage {
 		logger(1, "Language: "+importData.Account.Language+" - "+currentData.HLanguage, true)
-		return true
+		userUpdate = true
 	}
 	//-- If DateTimeFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.DateTimeFormat != "" && importData.Account.DateTimeFormat != currentData.HDateTimeFormat {
 		logger(1, "DateTimeFormat: "+importData.Account.DateTimeFormat+" - "+currentData.HDateTimeFormat, true)
-		return true
+		userUpdate = true
 	}
 	//-- If DateFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.DateFormat != "" && importData.Account.DateFormat != currentData.HDateFormat {
 		logger(1, "DateFormat: "+importData.Account.DateFormat+" - "+currentData.HDateFormat, true)
-		return true
+		userUpdate = true
 	}
 	//-- If TimeFormat mapping is empty then ignore as it defaults to a value
 	if importData.Account.TimeFormat != "" && importData.Account.TimeFormat != currentData.HTimeFormat {
 		logger(1, "TimeFormat: "+importData.Account.TimeFormat+" - "+currentData.HTimeFormat, true)
-		return true
+		userUpdate = true
 	}
 	//-- If CurrencySymbol mapping is empty then ignore as it defaults to a value
 	if importData.Account.CurrencySymbol != "" && importData.Account.CurrencySymbol != currentData.HCurrencySymbol {
 		logger(1, "CurrencySymbol: "+importData.Account.CurrencySymbol+" - "+currentData.HCurrencySymbol, true)
-		return true
+		userUpdate = true
 	}
 	//-- If CountryCode mapping is empty then ignore as it defaults to a value
 	if importData.Account.CountryCode != "" && importData.Account.CountryCode != currentData.HCountry {
 		logger(1, "CountryCode: "+importData.Account.CountryCode+" - "+currentData.HCountry, true)
+		userUpdate = true
+	}
+	twoFAMethod, ok := twoFAMap[currentData.HLogon2FAMethod]
+	if ok {
+		if checkUserFieldUpdate(importData.Account.Enable2FA, twoFAMethod) {
+			logger(1, "Enable2FA: "+importData.Account.Enable2FA+" - "+twoFAMethod, true)
+			userUpdate = true
+		}
+	}
+	userSecFlag := getUserFlag(importData.Account)
+	if checkUserFieldUpdate(userSecFlag, currentData.HSecOptions) {
+		userUpdate = true
+		importData.Account.UpdateSecOptions = true
+		importData.Account.SecurityFlag = userSecFlag
+		logger(1, "SecurityOptionsFlag: "+userSecFlag+" - "+currentData.HSecOptions, true)
+		logger(1, "DisableDirectLogin: "+importData.Account.DisableDirectLogin, true)
+		logger(1, "DisableDirectLoginPasswordReset: "+importData.Account.DisableDirectLoginPasswordReset, true)
+		logger(1, "DisableDevicePairing: "+importData.Account.DisableDevicePairing, true)
+	}
+	return userUpdate
+}
+
+func checkUserFieldUpdate(importField, currentField string) bool {
+	if strings.EqualFold(importField, "__clear__") && currentField == "" {
+		return false
+	} else if importField != "" && importField != currentField {
 		return true
 	}
-
 	return false
 }
+
+func getUserFlag(account AccountMappingStruct) string {
+	newFlag := 0
+	if account.DisableDirectLogin == "true" {
+		newFlag += 1
+	}
+	if account.DisableDirectLoginPasswordReset == "true" {
+		newFlag += 2
+	}
+	if account.DisableDevicePairing == "true" {
+		newFlag += 4
+	}
+	return strconv.Itoa(newFlag)
+}
+
 func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData userAccountStruct) bool {
 
 	if SQLImportConf.User.Manager.Action == "Both" || SQLImportConf.User.Manager.Action == "Update" {
@@ -628,8 +671,8 @@ func checkUserNeedsProfileUpdate(importData *userWorkingDataStruct, currentData 
 	return false
 }
 
-//-- For Each Import Actions process the data
-//func processImportActions(l *ldap.Entry) string {
+// -- For Each Import Actions process the data
+// func processImportActions(l *ldap.Entry) string {
 func processImportActions(l *map[string]interface{}) string {
 
 	//-- Set User Account Attributes
@@ -728,8 +771,8 @@ func processImportActions(l *map[string]interface{}) string {
 	return userID
 }
 
-//-- For Each DB User Process Account And Mappings
-//func processUserParams(l *ldap.Entry, userID string) {
+// -- For Each DB User Process Account And Mappings
+// func processUserParams(l *ldap.Entry, userID string) {
 func processUserParams(l *map[string]interface{}, userID string) {
 
 	data := HornbillCache.UsersWorking[userID]
@@ -755,6 +798,10 @@ func processUserParams(l *map[string]interface{}, userID string) {
 	data.Account.CurrencySymbol = getUserFieldValue(l, "CurrencySymbol", data.Custom)
 	data.Account.CountryCode = getUserFieldValue(l, "CountryCode", data.Custom)
 	data.Account.UserStatus = getUserStatusValue(l, data.Custom)
+	data.Account.Enable2FA = getUserFieldValue(l, "Enable2FA", data.Custom)
+	data.Account.DisableDirectLogin = getUserFieldValue(l, "DisableDirectLogin", data.Custom)
+	data.Account.DisableDirectLoginPasswordReset = getUserFieldValue(l, "DisableDirectLoginPasswordReset", data.Custom)
+	data.Account.DisableDevicePairing = getUserFieldValue(l, "DisableDevicePairing", data.Custom)
 
 	data.Profile.MiddleName = getProfileFieldValue(l, "MiddleName", data.Custom)
 	data.Profile.JobDescription = getProfileFieldValue(l, "JobDescription", data.Custom)

@@ -37,7 +37,11 @@
 		"DateFormat":"",
 		"TimeFormat":"",
 		"CurrencySymbol":"",
-		"CountryCode":""
+		"CountryCode":"",
+		"Enable2FA": "",
+		"DisableDirectLogin": "",
+		"DisableDirectLoginPasswordReset": "",
+		"DisableDevicePairing": ""
 	},
 	"Type":{
 		"Action":"Both"

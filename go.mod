@@ -4,11 +4,10 @@ go 1.16
 
 require (
 	github.com/alexbrainman/odbc v0.0.0-20210605012845-39f8520b0d5f
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/fatih/color v1.12.0
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
-	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/hashicorp/go-version v1.3.0 // indirect
 	github.com/hornbill/color v0.0.0-20160224221155-4f7bcef27eec
 	github.com/hornbill/go-mssqldb v0.0.0-20151214165723-4623535a2b1c
 	github.com/hornbill/goApiLib v0.0.0-20210702135347-bcef2b442dbc
@@ -20,7 +19,7 @@ require (
 	github.com/lib/pq v1.10.2 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7 // indirect
 	github.com/olekukonko/ts v0.0.0-20171002115256-78ecb04241c0 // indirect
-	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
+	github.com/rhysd/go-github-selfupdate v1.2.3
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 )

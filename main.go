@@ -13,13 +13,15 @@ import (
 	"time"
 
 	//-- CLI Colour
+	"github.com/blang/semver"
 	"github.com/hornbill/color"
+	"github.com/rhysd/go-github-selfupdate/selfupdate"
 
 	//-- Hornbill Clone of "github.com/mavricknz/ldap"
 	//--Hornbil Clone of "github.com/cheggaaa/pb"
 
 	apiLib "github.com/hornbill/goApiLib"
-	"github.com/tcnksm/go-latest" //-- For Version checking
+	//-- For Version checking
 )
 
 var (
@@ -48,7 +50,7 @@ func main() {
 	}
 
 	//-- Check for latest
-	checkVersion()
+	doSelfUpdate()
 
 	//-- Load Configuration File Into Struct
 	SQLImportConf = loadConfig()
@@ -141,7 +143,7 @@ func outputFlags() {
 	logger(1, "Flag - Workers "+fmt.Sprintf("%v", Flags.configWorkers), false)
 }
 
-//-- Process Input Flags
+// -- Process Input Flags
 func procFlags() {
 	//-- Grab Flags
 	flag.StringVar(&Flags.configFileName, "file", "conf.json", "Name of Configuration File To Load")
@@ -184,14 +186,13 @@ func procFlags() {
 		logger(2, "Flag - logprefix "+Flags.configLogPrefix, true)
 		logger(2, "Flag - dryrun "+fmt.Sprintf("%v", Flags.configDryRun), true)
 		logger(2, "Flag - instanceid "+Flags.configInstanceID, true)
-		logger(2, "Flag - apikey "+Flags.configAPIKey, true)
 		logger(2, "Flag - apitimeout "+fmt.Sprintf("%v", Flags.configAPITimeout), true)
 		logger(2, "Flag - workers "+fmt.Sprintf("%v", Flags.configWorkers)+"\n", true)
 		logger(2, "Flag - forcerun "+fmt.Sprintf("%v", Flags.configForceRun), true)
 	}
 }
 
-//-- Generate Output
+// -- Generate Output
 func outputEnd() {
 	logger(2, "Import Complete", true)
 	//-- End output
@@ -228,23 +229,6 @@ func outputEnd() {
 	logger(2, "---- XMLMC DB Import Complete ---- ", true)
 }
 
-//-- Check Latest
-func checkVersion() {
-	githubTag := &latest.GithubTag{
-		Owner:      "hornbill",
-		Repository: appName,
-	}
-
-	res, err := latest.Check(githubTag, version)
-	if err != nil {
-		logger(4, fmt.Sprintf("%s", err), true)
-		return
-	}
-	if res.Outdated {
-		logger(3, version+" is not latest, you should upgrade to "+res.Current+" by downloading the latest package Here https://github.com/hornbill/"+appName+"/releases/tag/v"+res.Current, true)
-	}
-}
-
 func loadConfig() sqlImportConfStruct {
 	//-- Check Config File File Exists
 	cwd, _ := os.Getwd()
@@ -277,7 +261,7 @@ func loadConfig() sqlImportConfStruct {
 	return eldapConf
 }
 
-//-- Function to Load Configuration File
+// -- Function to Load Configuration File
 func validateConf() error {
 
 	//-- Check for API Key
@@ -323,4 +307,59 @@ func CounterInc(counter int) {
 		counters.statusUpdated++
 	}
 	mutexCounters.Unlock()
+}
+
+func doSelfUpdate() {
+	logger(1, "Checking "+repo+" for updates...", true)
+	v := semver.MustParse(version)
+	latest, found, err := selfupdate.DetectLatest(repo)
+
+	if err != nil {
+		logger(5, "Error occurred while detecting version: "+err.Error(), true)
+		return
+	}
+	if !found {
+		logger(5, "Could not find Github repo, or existing release in required format.", true)
+		return
+	}
+
+	latestMajorVersion := strings.Split(fmt.Sprintf("%v", latest.Version), ".")[0]
+	latestMinorVersion := strings.Split(fmt.Sprintf("%v", latest.Version), ".")[1]
+	latestPatchVersion := strings.Split(fmt.Sprintf("%v", latest.Version), ".")[2]
+
+	currentMajorVersion := strings.Split(version, ".")[0]
+	currentMinorVersion := strings.Split(version, ".")[1]
+	currentPatchVersion := strings.Split(version, ".")[2]
+
+	//Useful in dev, customers should never see current version > latest release version
+	if currentMajorVersion > latestMajorVersion {
+		logger(3, "Current version "+version+" (major) is greater than the latest release version on Github "+fmt.Sprintf("%v", latest.Version), true)
+		return
+	} else {
+		if currentMinorVersion > latestMinorVersion {
+			logger(3, "Current version "+version+" (minor) is greater than the latest release version on Github "+fmt.Sprintf("%v", latest.Version), true)
+			return
+		} else if currentPatchVersion > latestPatchVersion {
+			logger(3, "Current version "+version+" (patch) is greater than the latest release version on Github "+fmt.Sprintf("%v", latest.Version), true)
+			return
+		}
+	}
+	if latestMajorVersion > currentMajorVersion {
+		msg := "v" + version + " is not latest, you should upgrade to " + fmt.Sprintf("%v", latest.Version) + " by downloading the latest package from: https://github.com/" + repo + "/releases/latest"
+		logger(5, msg, true)
+		return
+	}
+
+	_, err = selfupdate.UpdateSelf(v, repo)
+	if err != nil {
+		logger(5, "Binary update failed: "+err.Error(), true)
+		return
+	}
+	if latest.Version.Equals(v) {
+		// latest version is the same as current version. It means current binary is up to date.
+		logger(3, "Current binary is the latest version: "+version, true)
+	} else {
+		logger(3, "Successfully updated to version: "+fmt.Sprintf("%v", latest.Version), true)
+		logger(3, "Release notes:\n"+latest.ReleaseNotes, true)
+	}
 }

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -44,7 +43,7 @@ func loadImageFromValue(imageURI string) []byte {
 			}
 			defer resp.Body.Close()
 			if resp.StatusCode == 201 || resp.StatusCode == 200 {
-				imageB, _ = ioutil.ReadAll(resp.Body)
+				imageB, _ = io.ReadAll(resp.Body)
 			} else {
 				logger(4, "Unsuccesful download: "+fmt.Sprintf("%v", resp.StatusCode), false)
 				return nil
@@ -67,7 +66,7 @@ func loadImageFromValue(imageURI string) []byte {
 		return nil
 	}
 	defer response.Body.Close()
-	htmlData, err := ioutil.ReadAll(response.Body)
+	htmlData, err := io.ReadAll(response.Body)
 	if err != nil {
 		logger(4, "Unsuccesful Image Download: "+fmt.Sprintf("%v", err), false)
 		return nil
@@ -138,7 +137,7 @@ func userImageUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 				return false, Perr
 			}
 			defer response.Body.Close()
-			_, _ = io.Copy(ioutil.Discard, response.Body)
+			_, _ = io.Copy(io.Discard, response.Body)
 			if response.StatusCode == 201 || response.StatusCode == 200 {
 				value = "/" + relLink
 			}
@@ -196,7 +195,7 @@ func userImageUpdate(hIF *apiLib.XmlmcInstStruct, user *userWorkingDataStruct, b
 			return true, DelErr
 		}
 		defer responseDel.Body.Close()
-		_, _ = io.Copy(ioutil.Discard, responseDel.Body)
+		_, _ = io.Copy(io.Discard, responseDel.Body)
 		if responseDel.StatusCode < 200 || responseDel.StatusCode > 299 {
 			buffer.WriteString(loggerGen(3, "User image updated but could not remove from session. Status Code: "+strconv.Itoa(responseDel.StatusCode)))
 		}

@@ -113,7 +113,7 @@ func loadUserGroups() {
 	logger(1, "User Orgs Loaded: "+fmt.Sprintf("%d", len(HornbillCache.UserGroups))+"\n", false)
 }
 
-//-- Check so that only data that relates to users in the DB data set are stored in the working set
+// -- Check so that only data that relates to users in the DB data set are stored in the working set
 func userIDExistsInDB(userID string) bool {
 	userID = strings.ToLower(userID)
 	_, present := HornbillCache.UsersWorking[userID]
@@ -434,7 +434,7 @@ func getCount(query string) uint64 {
 	}
 
 	//-- return Count
-	count, errC := strconv.ParseUint(JSONResp.Params.RowData.Row[0].Count, 10, 16)
+	count, errC := strconv.ParseUint(JSONResp.Params.RowData.Row[0].Count, 10, 64)
 	//-- Check for Error
 	if errC != nil {
 		logger(4, "Unable to get Count for Query ["+query+"] "+fmt.Sprintf("%s", err), false)
@@ -443,7 +443,7 @@ func getCount(query string) uint64 {
 	return count
 }
 
-//getPasswordProfile - retrieves the user password profile settings from your Hornbill instance, applies ready for the password generator to use
+// getPasswordProfile - retrieves the user password profile settings from your Hornbill instance, applies ready for the password generator to use
 func getPasswordProfile() {
 	mc := apiLib.NewXmlmcInstance(Flags.configInstanceID)
 	mc.SetAPIKey(Flags.configAPIKey)
