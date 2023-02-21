@@ -14,7 +14,7 @@ version=${versiond//./_}
 #Remove White Space
 version=${version// /}
 versiond=${versiond// /}
-platforms="windows/386 windows/amd64 darwin/amd64"
+platforms="windows/386 windows/amd64 darwin/arm64"
 printf " ---- Building SQL User Import $versiond ---- \n"
 
 rm -rf "release/"
@@ -41,7 +41,7 @@ do
     destination="builds/$goos/$goarch/$output"
 
     printf "Go Build\n"
-    GOOS=$goos GOARCH=$goarch go build -trimpath -o $destination -buildvcs=false
+    CGO_ENABLED=1 GOOS=$goos GOARCH=$goarch go build -trimpath -o $destination -buildvcs=false
     # $target
 
     printf "Copy Source Files\n"
