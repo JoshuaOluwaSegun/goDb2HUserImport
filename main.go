@@ -152,7 +152,6 @@ func procFlags() {
 	flag.BoolVar(&Flags.configDryRun, "dryrun", false, "Allow the Import to run without Creating or Updating users")
 	flag.BoolVar(&Flags.configVersion, "version", false, "Output Version")
 	flag.IntVar(&Flags.configWorkers, "workers", 1, "Number of Worker threads to use")
-	flag.StringVar(&Flags.configMaxRoutines, "concurrent", "1", "Maximum number of requests to import concurrently.")
 	flag.IntVar(&Flags.configAPITimeout, "apitimeout", 60, "Number of Seconds to Timeout an API Connection")
 	flag.BoolVar(&Flags.configForceRun, "forcerun", false, "Bypass check on existing running import")
 
@@ -164,17 +163,11 @@ func procFlags() {
 		outputFlags()
 	}
 
-	//Check maxGoroutines for valid value
-	maxRoutines, err := strconv.Atoi(Flags.configMaxRoutines)
-	if err != nil {
-		color.Red("Unable to convert maximum concurrency of [" + Flags.configMaxRoutines + "] to type INT for processing")
-		return
-	}
-	maxGoroutines = maxRoutines
+	maxGoroutines = Flags.configWorkers
 
 	if maxGoroutines < 1 || maxGoroutines > 10 {
 		color.Red("The maximum concurrent requests allowed is between 1 and 10 (inclusive).\n\n")
-		color.Red("You have selected " + Flags.configMaxRoutines + ". Please try again, with a valid value against ")
+		color.Red("You have selected " + strconv.Itoa(Flags.configWorkers) + ". Please try again, with a valid value against ")
 		color.Red("the -concurrent switch.")
 		return
 	}

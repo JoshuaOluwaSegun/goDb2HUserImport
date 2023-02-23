@@ -6,7 +6,7 @@ import (
 )
 
 // ----- Constants -----
-const version = "3.1.0"
+const version = "3.2.0"
 const appName = "goDb2HUserImport"
 const applicationName = "DB User Import Utility"
 
@@ -56,18 +56,17 @@ type xmlmcSettingResponse struct {
 
 // Flags List
 var Flags struct {
-	configID          string
-	configLogPrefix   string
-	configDryRun      bool
-	configVersion     bool
-	configInstanceID  string
-	configAPIKey      string
-	configWorkers     int
-	configAPITimeout  int
-	configForceRun    bool
-	configFileName    string
-	configZone        string
-	configMaxRoutines string
+	configID         string
+	configLogPrefix  string
+	configDryRun     bool
+	configVersion    bool
+	configInstanceID string
+	configAPIKey     string
+	configWorkers    int
+	configAPITimeout int
+	configForceRun   bool
+	configFileName   string
+	configZone       string
 }
 
 // HornbillCache Struct

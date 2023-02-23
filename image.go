@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/sha1"
 	"crypto/tls"
@@ -10,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -50,6 +52,24 @@ func loadImageFromValue(imageURI string) []byte {
 			}
 		case "AD":
 			imageB = []byte(imageURI)
+		case "LOCAL":
+			//-- Load Config File
+			file, Berr := os.Open(imageURI)
+			//-- Check For Error Reading File
+			if Berr != nil {
+				logger(4, "Error Opening File: "+Berr.Error(), false)
+				return nil
+			}
+			defer file.Close()
+			// create a new buffer base on file size
+			fInfo, _ := file.Stat()
+			size := fInfo.Size()
+			buf := make([]byte, size)
+
+			// read file content into buffer
+			fReader := bufio.NewReader(file)
+			fReader.Read(buf)
+			imageB = buf
 		default:
 			imageB, Berr = hex.DecodeString(imageURI[2:]) //stripping leading 0x
 			if Berr != nil {
